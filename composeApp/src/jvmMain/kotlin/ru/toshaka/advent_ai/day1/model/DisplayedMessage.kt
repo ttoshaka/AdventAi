@@ -1,4 +1,4 @@
-package ru.toshaka.advent_ai.model
+package ru.toshaka.advent_ai.day1.model
 
 data class DisplayedMessage(
     val text: String,

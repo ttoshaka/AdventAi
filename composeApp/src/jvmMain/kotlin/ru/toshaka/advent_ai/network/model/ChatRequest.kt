@@ -1,4 +1,4 @@
-package ru.toshaka.advent_ai.model
+package ru.toshaka.advent_ai.network.model
 
 import kotlinx.serialization.Serializable
 

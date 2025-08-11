@@ -1,10 +1,10 @@
-package ru.toshaka.advent_ai
+package ru.toshaka.advent_ai.day1
 
 import androidx.compose.runtime.*
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import kotlinx.coroutines.flow.collectLatest
-import ru.toshaka.advent_ai.model.DisplayedMessage
+import ru.toshaka.advent_ai.day1.model.DisplayedMessage
 
 fun main() = application {
     val viewModel = MainViewModel()

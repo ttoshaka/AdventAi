@@ -1,4 +1,4 @@
-package ru.toshaka.advent_ai
+package ru.toshaka.advent_ai.day1
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -17,7 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.ui.tooling.preview.Preview
-import ru.toshaka.advent_ai.model.DisplayedMessage
+import ru.toshaka.advent_ai.day1.model.DisplayedMessage
 
 @Composable
 @Preview
