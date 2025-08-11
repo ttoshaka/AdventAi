@@ -11,7 +11,7 @@ import ru.toshaka.advent_ai.network.DeepSeekClientApi
 class MainViewModel {
 
     private val viewModelScope = CoroutineScope(Dispatchers.Default)
-    private val clientApi = DeepSeekClientApi()
+    private val clientApi = DeepSeekClientApi("You are a helpful assistant.")
 
     private val _messages = MutableStateFlow<List<DisplayedMessage>>(emptyList())
     val messages = _messages.asStateFlow()

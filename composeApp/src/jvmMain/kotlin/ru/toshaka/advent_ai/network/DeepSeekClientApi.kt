@@ -14,7 +14,9 @@ import ru.toshaka.advent_ai.network.model.ChatRequest
 import ru.toshaka.advent_ai.network.model.ChatResponse
 import ru.toshaka.advent_ai.network.model.Message
 
-class DeepSeekClientApi {
+class DeepSeekClientApi(
+    private val system: String,
+) {
 
     private val messageHistory = mutableListOf<Message>()
     private val client = HttpClient(CIO) {
@@ -31,7 +33,7 @@ class DeepSeekClientApi {
     }
 
     init {
-        messageHistory.add(Message("system", "You are a helpful assistant."))
+        messageHistory.add(Message("system", system))
     }
 
     suspend fun chat(prompt: String): String {
