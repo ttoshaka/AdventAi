@@ -1,4 +1,4 @@
-package ru.toshaka.advent_ai.day3.model
+package ru.toshaka.advent_ai.model
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -12,6 +12,7 @@ sealed interface ElementDto {
         val type: String,
         val message: String,
         val color: String,
+        val backgroundColor: String,
     ) : ElementDto
 
     @Serializable
@@ -20,6 +21,7 @@ sealed interface ElementDto {
         val type: String,
         val message: String,
         val color: String,
+        val textColor: String,
     ) : ElementDto
 }
 

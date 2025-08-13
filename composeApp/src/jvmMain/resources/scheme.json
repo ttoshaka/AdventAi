@@ -13,12 +13,19 @@
           },
           "color": {
             "type": "string",
-            "pattern": "^#[0-9A-Fa-f]{8}$"
+            "pattern": "^#[0-9A-Fa-f]{8}$",
+            "description": "Запрашивать у пользователя просто название цвета, а не формат rgba"
+          },
+          "backgroundColor": {
+            "type": "string",
+            "pattern": "^#[0-9A-Fa-f]{8}$",
+            "description": "Запрашивать у пользователя просто название цвета, а не формат rgba"
           }
         },
         "required": [
           "message",
-          "color"
+          "color",
+          "backgroundColor"
         ],
         "additionalProperties": false
       },
@@ -30,10 +37,20 @@
           },
           "message": {
             "type": "string"
+          },
+          "color": {
+            "type": "string",
+            "pattern": "^#[0-9A-Fa-f]{8}$"
+          },
+          "textColor": {
+            "type": "string",
+            "pattern": "^#[0-9A-Fa-f]{8}$"
           }
         },
         "required": [
-          "message"
+          "message",
+          "color",
+          "textColor"
         ],
         "additionalProperties": false
       }

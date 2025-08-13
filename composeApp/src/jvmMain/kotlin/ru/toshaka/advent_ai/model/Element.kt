@@ -1,10 +1,16 @@
-package ru.toshaka.advent_ai.day3.model
+package ru.toshaka.advent_ai.model
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 sealed interface Element {
 
@@ -14,20 +20,30 @@ sealed interface Element {
     data class Text(
         val message: String,
         val color: String,
+        val backgroundColor: String,
     ) : Element {
 
         @Composable
         override fun toCompose() {
-            Text(
-                text = message,
-                color = rgbaStringToColor(color)
-            )
+            Box(
+                modifier = Modifier.background(
+                    color = rgbaStringToColor(backgroundColor)
+                )
+                    .padding(4.dp)
+            ) {
+                Text(
+                    text = message,
+                    fontSize = 24.sp,
+                    color = rgbaStringToColor(color)
+                )
+            }
         }
     }
 
     data class Button(
         val message: String,
         val color: String,
+        val textColor: String,
     ) : Element {
 
         @Composable
@@ -38,7 +54,11 @@ sealed interface Element {
                     backgroundColor = rgbaStringToColor(color)
                 ),
                 content = {
-                    Text(text = message)
+                    Text(
+                        text = message,
+                        fontSize = 16.sp,
+                        color = rgbaStringToColor(textColor)
+                    )
                 }
             )
         }

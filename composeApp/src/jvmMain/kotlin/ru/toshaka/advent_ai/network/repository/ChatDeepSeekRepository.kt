@@ -4,46 +4,21 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import ru.toshaka.advent_ai.network.api.DeepSeekApi
 import ru.toshaka.advent_ai.network.model.ChatRequest
-import ru.toshaka.advent_ai.network.model.ChatRequestResult
 import ru.toshaka.advent_ai.network.model.Message
-import ru.toshaka.advent_ai.network.model.Roles
 
 class ChatDeepSeekRepository(
-    systemPrompt: String,
     private val api: DeepSeekApi,
     private val ioDispatcher: CoroutineDispatcher,
 ) {
 
-    private val messageHistory = mutableListOf(
-        Message(
-            role = Roles.system.name,
-            content = systemPrompt
-        )
-    )
-
-    suspend fun chat(promt: String): ChatRequestResult = withContext(ioDispatcher) {
-        val userMessage = Message(
-            role = Roles.user.name,
-            content = promt
-        )
-        messageHistory.add(userMessage)
+    suspend fun chat(messages: List<Message>): String = withContext(ioDispatcher) {
         val request = ChatRequest(
             model = MODEL,
-            messages = messageHistory,
+            messages = messages,
         )
-        try {
-            val response = api.chat(request)
-            val message = response.choices.first().message.content
-            val assistantMessage = Message(
-                role = Roles.assistant.name,
-                content = message,
-            )
-            messageHistory.add(assistantMessage)
-            return@withContext ChatRequestResult.Success(message)
-        } catch (throwable: Throwable) {
-            messageHistory.remove(userMessage)
-            return@withContext ChatRequestResult.Failure(throwable)
-        }
+        val response = api.chat(request)
+        val message = response.choices.first().message.content
+        return@withContext message
     }
 
     companion object {

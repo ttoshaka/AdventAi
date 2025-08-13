@@ -1,6 +1,6 @@
 @file:Suppress("FunctionName")
 
-package ru.toshaka.advent_ai.day3
+package ru.toshaka.advent_ai
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -22,8 +22,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.ui.tooling.preview.Preview
-import ru.toshaka.advent_ai.day3.model.DisplayedMessage
-import ru.toshaka.advent_ai.day3.model.Element
+import ru.toshaka.advent_ai.model.DisplayedMessage
+import ru.toshaka.advent_ai.model.Element
 
 @Composable
 @Preview
@@ -47,7 +47,7 @@ fun App(
                 ChatWindow(
                     modifier = Modifier.fillMaxHeight()
                         .weight(1f),
-                    messages = messages,
+                    messages = messages.reversed(),
                 )
                 Spacer(modifier = Modifier.width(16.dp))
                 PreviewCanvas(
@@ -79,7 +79,8 @@ fun ChatWindow(
                 color = Color.White,
                 shape = RoundedCornerShape(16.dp),
             )
-            .padding(8.dp)
+            .padding(8.dp),
+        reverseLayout = true
     ) {
         items(messages) { message ->
             Row(
@@ -89,16 +90,50 @@ fun ChatWindow(
                         vertical = 8.dp
                     )
             ) {
-                if (message.author == DisplayedMessage.Author.USER) {
+                if (message.author == DisplayedMessage.Author.User) {
                     Spacer(modifier = Modifier.weight(1f))
-                    Text(message.text)
+                    Message(
+                        message = message,
+                        modifier = Modifier.weight(1f)
+                    )
                 } else {
-                    Text(message.text)
-                    Spacer(modifier = Modifier.weight(1f))
+                    Message(
+                        message = message,
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    Spacer(modifier = Modifier.weight(1.2f))
                 }
             }
-            Divider(modifier = Modifier.fillMaxWidth().padding(horizontal = 32.dp))
         }
+    }
+}
+
+@Composable
+fun Message(
+    message: DisplayedMessage,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier.shadow(
+            elevation = 4.dp,
+            shape = RoundedCornerShape(8.dp)
+        )
+            .background(
+                color = Color(0xFFFFF8E7),
+                shape = RoundedCornerShape(8.dp)
+            )
+    ) {
+        Text(
+            modifier = Modifier.padding(8.dp),
+            text = message.author.displayedName,
+            style = MaterialTheme.typography.headlineSmall,
+        )
+        Divider(modifier = Modifier.height(1.dp))
+        Text(
+            modifier = Modifier.padding(8.dp),
+            text = message.text
+        )
     }
 }
 
