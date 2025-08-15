@@ -48,4 +48,18 @@ sealed interface ResponseType {
         val type: String,
         val content: List<ElementDto>,
     ) : ResponseType
+
+    @Serializable
+    @SerialName("tools")
+    data class Tools(
+        val type: String,
+        val content: Content,
+    ) : ResponseType {
+
+        @Serializable
+        data class Content(
+            val content: String,
+            val toolName: String,
+        )
+    }
 }

@@ -29,7 +29,6 @@ import ru.toshaka.advent_ai.model.Element
 @Preview
 fun App(
     messages: List<DisplayedMessage>,
-    elements: List<Element>,
     onSendMessage: (String) -> Unit,
 ) {
     MaterialTheme {
@@ -48,12 +47,6 @@ fun App(
                     modifier = Modifier.fillMaxHeight()
                         .weight(1f),
                     messages = messages.reversed(),
-                )
-                Spacer(modifier = Modifier.width(16.dp))
-                PreviewCanvas(
-                    modifier = Modifier.fillMaxHeight()
-                        .weight(1f),
-                    elements = elements,
                 )
             }
             InputMessage(
@@ -166,7 +159,7 @@ fun InputMessage(
     modifier: Modifier = Modifier,
     onSendMessage: (String) -> Unit,
 ) {
-    var text by remember { mutableStateOf("") }
+    var text by remember { mutableStateOf("Подсчитай количество символов в этом сообщение") }
     Row(
         modifier = modifier
             .padding(8.dp),

@@ -1,59 +1,18 @@
 {
-  "type": "array",
-  "items": {
-    "oneOf": [
-      {
-        "type": "object",
-        "properties": {
-          "type": {
-            "const": "text"
-          },
-          "message": {
-            "type": "string"
-          },
-          "color": {
-            "type": "string",
-            "pattern": "^#[0-9A-Fa-f]{8}$",
-            "description": "Запрашивать у пользователя просто название цвета, а не формат rgba"
-          },
-          "backgroundColor": {
-            "type": "string",
-            "pattern": "^#[0-9A-Fa-f]{8}$",
-            "description": "Запрашивать у пользователя просто название цвета, а не формат rgba"
-          }
-        },
-        "required": [
-          "message",
-          "color",
-          "backgroundColor"
-        ],
-        "additionalProperties": false
-      },
-      {
-        "type": "object",
-        "properties": {
-          "type": {
-            "const": "button"
-          },
-          "message": {
-            "type": "string"
-          },
-          "color": {
-            "type": "string",
-            "pattern": "^#[0-9A-Fa-f]{8}$"
-          },
-          "textColor": {
-            "type": "string",
-            "pattern": "^#[0-9A-Fa-f]{8}$"
-          }
-        },
-        "required": [
-          "message",
-          "color",
-          "textColor"
-        ],
-        "additionalProperties": false
-      }
-    ]
-  }
+  "type": "object",
+  "properties": {
+    "toolName": {
+      "type": "string",
+      "description": "Наименование инструмента"
+    },
+    "content": {
+      "type": "string",
+      "description": "Данные для передачи в инструмента в формате JSON который соответствует входным данным инструмента"
+    }
+  },
+  "required": [
+    "toolName",
+    "content"
+  ],
+  "additionalProperties": false
 }

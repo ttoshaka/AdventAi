@@ -6,6 +6,8 @@ plugins {
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.composeHotReload)
     alias(libs.plugins.kotlinxSerialization)
+
+    id("io.ktor.plugin") version "3.2.2"
 }
 
 kotlin {
@@ -30,6 +32,10 @@ kotlin {
             implementation(libs.ktor.serialization.kotlinx.json)
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.logback)
+
+            implementation("io.ktor:ktor-server-netty")
+            implementation("io.modelcontextprotocol:kotlin-sdk:0.5.0")
+            implementation("ch.qos.logback:logback-classic:1.4.14")
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

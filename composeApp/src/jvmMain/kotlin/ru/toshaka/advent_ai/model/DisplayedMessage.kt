@@ -10,5 +10,7 @@ data class DisplayedMessage(
         data object User : Author("Пользователь")
 
         data class Ai(val name: String) : Author(name)
+
+        data class Tool(val name: String) : Author(name)
     }
 }

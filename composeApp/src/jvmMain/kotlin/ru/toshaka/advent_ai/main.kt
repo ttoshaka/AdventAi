@@ -14,23 +14,9 @@ fun main() = application {
         title = "AdventAi",
     ) {
         var messages by remember { mutableStateOf(emptyList<DisplayedMessage>()) }
-        var elements by remember { mutableStateOf(emptyList<Element>()) }
-        LaunchedEffect(Unit) {
-            viewModel.elements.collectLatest {
-                println("Collect = $it")
-                elements = it
-            }
-        }
-
-        LaunchedEffect(Unit) {
-            viewModel.messages.collectLatest {
-                println("Collect = $it")
-                messages = it
-            }
-        }
+        LaunchedEffect(Unit) { viewModel.messages.collectLatest { messages = it } }
         App(
             messages = messages,
-            elements = elements,
             onSendMessage = { viewModel.onClick(it) }
         )
     }
