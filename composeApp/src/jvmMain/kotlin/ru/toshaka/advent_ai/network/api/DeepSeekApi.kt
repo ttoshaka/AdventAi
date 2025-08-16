@@ -46,7 +46,7 @@ class DeepSeekApi {
         }.body<ChatResponse>()
 
     companion object {
-        private const val KEY: String = "API-KEY"
+        const val KEY: String = "API-KEY"
         private const val URL: String = "https://api.deepseek.com/chat/completions"
         private const val TIMEOUT: Long = 60_000
     }

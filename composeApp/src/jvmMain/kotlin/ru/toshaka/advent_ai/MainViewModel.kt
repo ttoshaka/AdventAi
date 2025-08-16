@@ -15,7 +15,6 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import ru.toshaka.advent_ai.model.DisplayedMessage
-import ru.toshaka.advent_ai.model.Element
 import ru.toshaka.advent_ai.model.ResponseType
 import ru.toshaka.advent_ai.network.api.DeepSeekApi
 import ru.toshaka.advent_ai.network.model.ChatResult
@@ -76,12 +75,6 @@ class MainViewModel {
         )
         when (decoded) {
             is ResponseType.Tools -> {
-                val aiMessage = DisplayedMessage(
-                    text = result.message,
-                    author = DisplayedMessage.Author.Ai(result.agentName),
-                )
-                showMessage(aiMessage)
-
                 val result = client.callTool(
                     name = decoded.content.toolName,
                     arguments = Json.parseToJsonElement(decoded.content.content).jsonObject
@@ -89,11 +82,10 @@ class MainViewModel {
                 result?.content?.forEach { content ->
                     when (content) {
                         is TextContent -> {
-                            val toolMessage = DisplayedMessage(
-                                text = content.text ?: "Empty text",
-                                author = DisplayedMessage.Author.Tool("MCP tool - ${decoded.content.toolName}"),
-                            )
-                            showMessage(toolMessage)
+                            when (val chatResult = layoutAgent.chat(content.text!!)) {
+                                is ChatResult.Success -> onChatSuccess(chatResult)
+                                is ChatResult.Failure -> onChatFailure(chatResult)
+                            }
                         }
 
                         else -> {
@@ -103,6 +95,10 @@ class MainViewModel {
                 }
             }
 
+            is ResponseType.TextDto -> {
+                showMessage(DisplayedMessage(decoded.content, DisplayedMessage.Author.Ai(result.agentName)))
+            }
+
             else -> {
                 println("Unexpected LLM response $decoded")
             }
@@ -110,7 +106,7 @@ class MainViewModel {
     }
 
     private fun showMessage(message: DisplayedMessage) {
-        _messages.value = _messages.value + message
+        _messages.value += message
     }
 
     private fun onChatFailure(result: ChatResult.Failure) {
@@ -150,6 +146,7 @@ class MainViewModel {
                 "   - \"content\": данные ответа. Не оборачивай его в JSON маркеры.\n" +
                 "3. Типы:\n" +
                 "   - \"tools\" — если необходимо воспользоваться инструментом. В \"content\" кладётся объект, строго соответствующий схеме ${getScheme()}. Экранируй символы { и }" +
+                "   - \"text\" — если нужно написать простое сообщение. В \"content\" кладётся объект, текст сообщения." +
                 "4. Никогда не смешивай несколько типов в одном ответе.\n" +
                 "5. При \"json\" строго соблюдай предоставленную JSON-схему.\n" +
                 "6. Ответ всегда должен быть корректным JSON без комментариев и лишнего текста. Не оборачивай его в JSON маркеры." +

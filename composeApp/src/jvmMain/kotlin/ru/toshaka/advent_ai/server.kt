@@ -1,5 +1,14 @@
 package ru.toshaka.advent_ai
 
+import io.ktor.client.*
+import io.ktor.client.call.*
+import io.ktor.client.plugins.auth.*
+import io.ktor.client.plugins.auth.providers.*
+import io.ktor.client.plugins.contentnegotiation.*
+import io.ktor.client.plugins.logging.*
+import io.ktor.client.request.*
+import io.ktor.http.*
+import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.cio.*
 import io.ktor.server.engine.*
 import io.modelcontextprotocol.kotlin.sdk.*
@@ -7,10 +16,11 @@ import io.modelcontextprotocol.kotlin.sdk.server.RegisteredTool
 import io.modelcontextprotocol.kotlin.sdk.server.Server
 import io.modelcontextprotocol.kotlin.sdk.server.ServerOptions
 import io.modelcontextprotocol.kotlin.sdk.server.mcp
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.putJsonObject
+import ru.toshaka.advent_ai.network.api.DeepSeekApi.Companion.KEY
 
 fun main() {
     embeddedServer(CIO, port = 3001, host = "0.0.0.0") {
@@ -29,28 +39,39 @@ private fun configureMPC(): Server {
             )
         )
     )
-    server.addTools(listOf(countLetters))
+    server.addTools(listOf(modelsLis))
     return server
 }
 
-val countLetters = RegisteredTool(
+val httpClient = HttpClient {
+    install(Logging) {
+        level = LogLevel.ALL
+    }
+    install(ContentNegotiation) {
+        json(Json {
+            ignoreUnknownKeys = true
+            prettyPrint = true
+        })
+    }
+    install(Auth) {
+        bearer {
+            loadTokens {
+                BearerTokens(KEY, null)
+            }
+        }
+    }
+}
+
+val modelsLis = RegisteredTool(
     Tool(
         name = "get-letters-count",
-        description = "Подсчитывает количество символов в сообщение",
-        inputSchema = Tool.Input(
-            properties = buildJsonObject {
-                putJsonObject("message") {
-                    put("type", JsonPrimitive("string"))
-                    put("description", JsonPrimitive("message, Message from user"))
-                }
-            },
-            required = listOf("message")
-        )
+        description = "Выдает список доступных языковых моделей",
+        inputSchema = Tool.Input()
     )
-) { request ->
-    val category = request.arguments["message"]?.jsonPrimitive?.content ?: return@RegisteredTool CallToolResult(
-        content = listOf(TextContent("Required field 'message' is missing"))
-    )
-    CallToolResult(content = listOf(TextContent("Количество символов ${category.count()}")))
+) { _ ->
+    val response = httpClient.get(urlString = "https://api.deepseek.com/models") {
+        header(HttpHeaders.ContentType, ContentType.Application.Json)
+    }.body<String>()
+    CallToolResult(content = listOf(TextContent(response)))
 }
 
