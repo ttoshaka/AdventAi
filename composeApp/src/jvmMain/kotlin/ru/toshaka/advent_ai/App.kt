@@ -159,7 +159,7 @@ fun InputMessage(
     modifier: Modifier = Modifier,
     onSendMessage: (String) -> Unit,
 ) {
-    var text by remember { mutableStateOf("Напиши список доступных языковых моделей. Когда получишь этот список, то расскажи про них.") }
+    var text by remember { mutableStateOf("Напиши последнее сообщение пользователя") }
     Row(
         modifier = modifier
             .padding(8.dp),

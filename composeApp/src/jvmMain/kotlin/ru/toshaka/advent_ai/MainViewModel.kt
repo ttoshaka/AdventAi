@@ -1,19 +1,17 @@
 package ru.toshaka.advent_ai
 
-import io.ktor.client.*
-import io.ktor.client.plugins.sse.*
-import io.modelcontextprotocol.kotlin.sdk.Implementation
-import io.modelcontextprotocol.kotlin.sdk.TextContent
-import io.modelcontextprotocol.kotlin.sdk.client.Client
-import io.modelcontextprotocol.kotlin.sdk.client.ClientOptions
-import io.modelcontextprotocol.kotlin.sdk.client.SseClientTransport
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
+import ru.toshaka.advent_ai.mcp.client.FactClient
+import ru.toshaka.advent_ai.mcp.client.TelegramBotClient
+import ru.toshaka.advent_ai.mcp.server.FactServer
+import ru.toshaka.advent_ai.mcp.server.TelegramBorServer
 import ru.toshaka.advent_ai.model.DisplayedMessage
 import ru.toshaka.advent_ai.model.ResponseType
 import ru.toshaka.advent_ai.network.api.DeepSeekApi
@@ -22,45 +20,51 @@ import ru.toshaka.advent_ai.network.repository.ChatDeepSeekRepository
 
 class MainViewModel {
 
-    private val client = Client(
-        clientInfo = Implementation("chat-ui", "0.0.1"),
-        options = ClientOptions()
-    )
-    private val httpClient = HttpClient {
-        install(SSE)
-    }
-    private val transport = SseClientTransport(
-        client = httpClient,
-        urlString = "http://localhost:3001"
-    )
-
-    private lateinit var layoutAgent: AiAgent
-
-    private val deepSeekApi = DeepSeekApi()
     private val viewModelScope = CoroutineScope(Dispatchers.Default)
 
     private val _messages = MutableStateFlow<List<DisplayedMessage>>(emptyList())
     val messages = _messages.asStateFlow()
 
+    private val botServer = TelegramBorServer()
+    private val telegramClient = TelegramBotClient()
+
+    private val factServer = FactServer()
+    private val factClient = FactClient()
+
+    private lateinit var mainAgent: AiAgent
+
     init {
         viewModelScope.launch {
-            launchClient { toolsDescription ->
-                layoutAgent = AiAgent(
-                    chatRepository = ChatDeepSeekRepository(
-                        api = deepSeekApi,
-                        ioDispatcher = Dispatchers.IO
-                    ),
-                    initialSystemPrompt = getSystemPrompt(toolsDescription),
-                    name = "AI-помошник"
-                )
+            botServer.launch()
+        }
+        viewModelScope.launch {
+            factServer.launch()
+        }
+        viewModelScope.launch {
+            delay(5000)
+            factClient.connect()
+            val tools = telegramClient.connect()
+            val toolsDescription = buildString {
+                tools.forEach {
+                    append("Название инструмента - ${it.name}")
+                    append("\n")
+                    append("Описание инструмента - ${it.description}")
+                    append("\n")
+                    append("Схема входных данных - ${it.inputSchema}")
+                }
             }
+            mainAgent = AiAgent(
+                initialSystemPrompt = getSystemPrompt(toolsDescription),
+                chatRepository = ChatDeepSeekRepository(DeepSeekApi(), Dispatchers.IO),
+                name = "Ai-agent"
+            )
         }
     }
 
     fun onClick(message: String) {
         showMessage(DisplayedMessage(message, DisplayedMessage.Author.User))
         viewModelScope.launch {
-            when (val chatResult = layoutAgent.chat(message)) {
+            when (val chatResult = mainAgent.chat(message)) {
                 is ChatResult.Success -> onChatSuccess(chatResult)
                 is ChatResult.Failure -> onChatFailure(chatResult)
             }
@@ -75,24 +79,17 @@ class MainViewModel {
         )
         when (decoded) {
             is ResponseType.Tools -> {
-                val result = client.callTool(
+                val result = telegramClient.call(
                     name = decoded.content.toolName,
                     arguments = Json.parseToJsonElement(decoded.content.content).jsonObject
                 )
-                result?.content?.forEach { content ->
-                    when (content) {
-                        is TextContent -> {
-                            when (val chatResult = layoutAgent.chat(content.text!!)) {
-                                is ChatResult.Success -> onChatSuccess(chatResult)
-                                is ChatResult.Failure -> onChatFailure(chatResult)
-                            }
-                        }
-
-                        else -> {
-                            println("Unexpected MCP tool response $decoded")
-                        }
-                    }
-                }
+                val fact = factClient.call(result)
+                showMessage(
+                    DisplayedMessage(
+                        text = fact,
+                        author = DisplayedMessage.Author.Tool("fact-mcp")
+                    )
+                )
             }
 
             is ResponseType.TextDto -> {
@@ -115,22 +112,6 @@ class MainViewModel {
 
     private fun getScheme(): String? =
         javaClass.classLoader.getResource(JSON_SCHEME_FILE_NAME)?.readText()
-
-
-    private suspend fun launchClient(onToolsReceived: (String) -> Unit) {
-        client.connect(transport)
-        val tools = client.listTools()
-        val toolsDescription = buildString {
-            tools!!.tools.forEach {
-                append("Название инструмента - ${it.name}")
-                append("\n")
-                append("Описание инструмента - ${it.description}")
-                append("\n")
-                append("Схема входных данных - ${it.inputSchema}")
-            }
-        }
-        onToolsReceived(toolsDescription)
-    }
 
     private fun getSystemPrompt(tools: String): String =
         "Ты — помощник, который использует предоставленные ему инструменты для обработки запросов пользователя." +

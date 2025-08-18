@@ -1,3 +1,5 @@
+import org.gradle.kotlin.dsl.maven
+
 rootProject.name = "AdventAi"
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
@@ -25,6 +27,7 @@ dependencyResolutionManagement {
             }
         }
         mavenCentral()
+        maven { setUrl("https://jitpack.io") }
     }
 }
 

@@ -36,6 +36,7 @@ kotlin {
             implementation("io.ktor:ktor-server-netty")
             implementation("io.modelcontextprotocol:kotlin-sdk:0.5.0")
             implementation("ch.qos.logback:logback-classic:1.4.14")
+            implementation("io.github.kotlin-telegram-bot.kotlin-telegram-bot:telegram:6.3.0")
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
