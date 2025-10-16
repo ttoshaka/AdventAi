@@ -43,7 +43,12 @@ class DeepSeekApi {
         val requestBody = DeepSeekRequest(
             messages = listOf(
                 DeepSeekRequest.DeepSeekMessage(
-                    content = "You are a helpful assistant",
+                    content = "Ты AI-шутник, который придумывает шутки в формате вопрос-ответ" +
+                            "Отвечай в следующем json-формате:" +
+                            "{\n" +
+                            "  \"question\": \"Вопрос\",\n" +
+                            "  \"answer\": \"Ответ\"\n" +
+                            "}",
                     role = "system"
                 ),
                 DeepSeekRequest.DeepSeekMessage(
@@ -51,7 +56,8 @@ class DeepSeekApi {
                     role = "user"
                 )
             ),
-            model = "deepseek-chat"
+            model = "deepseek-chat",
+            responseFormat = DeepSeekRequest.ResponseFormat("json_object"),
         )
 
         return client.post(URL) {
@@ -61,7 +67,7 @@ class DeepSeekApi {
     }
 
     companion object {
-        const val KEY: String = "KEY"
+        const val KEY: String = "sk-c388a56e101b4d989e16d87c6c080658"
         private const val URL: String = "https://api.deepseek.com/chat/completions"
         private const val TIMEOUT: Long = 60_000
     }

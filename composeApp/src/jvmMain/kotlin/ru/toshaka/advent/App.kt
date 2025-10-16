@@ -25,7 +25,7 @@ import androidx.compose.ui.unit.sp
 
 @Composable
 fun App(
-    messages: List<ChatMessage>,
+    messages: List<ChatItem>,
     onSendClick: (String) -> Unit,
 ) {
     MaterialTheme {
@@ -37,12 +37,25 @@ fun App(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             messages.forEach { messageItem ->
-                ChatMessageItem(
-                    authorName = messageItem.authorName,
-                    messageText = messageItem.messageText,
-                    debugInfo = messageItem.debugInfo,
-                    isOwnMessage = messageItem.isOwnMessage,
-                )
+                when (messageItem) {
+                    is ChatItem.ChatMessage -> {
+                        ChatMessageItem(
+                            authorName = messageItem.authorName,
+                            messageText = messageItem.messageText,
+                            debugInfo = messageItem.debugInfo,
+                            isOwnMessage = messageItem.isOwnMessage,
+                        )
+                    }
+
+                    is ChatItem.ChatJoke -> {
+                        ChatJokeItem(
+                            question = messageItem.question,
+                            answer = messageItem.answer,
+                            authorName = messageItem.authorName,
+                        )
+                    }
+                }
+
             }
             Spacer(modifier = Modifier.weight(1f))
             ChatInputBar(
@@ -99,6 +112,55 @@ fun ChatMessageItem(
                     modifier = Modifier.align(Alignment.End)
                 )
             }
+        }
+    }
+}
+
+@Composable
+fun ChatJokeItem(
+    question: String,
+    answer: String,
+    authorName: String,
+    maxWidthFraction: Float = 0.5f,
+    modifier: Modifier = Modifier
+) {
+    BoxWithConstraints(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+        contentAlignment = Alignment.CenterStart
+    ) {
+        val messageMaxWidth = maxWidth * maxWidthFraction
+
+        Column(
+            modifier = Modifier
+                .widthIn(max = messageMaxWidth)
+                .background(
+                    color = Color(0xFFFFFFFF),
+                    shape = RoundedCornerShape(12.dp)
+                )
+                .border(1.dp, Color(0xFFE0E0E0), RoundedCornerShape(12.dp))
+                .padding(16.dp)
+        ) {
+            Text(
+                text = authorName,
+                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                color = Color.Gray
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = question,
+                style = MaterialTheme.typography.bodyLarge,
+                fontSize = 20.sp,
+                color = Color.Black
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = answer,
+                style = MaterialTheme.typography.bodyMedium,
+                fontSize = 16.sp,
+                color = Color.Gray
+            )
         }
     }
 }
