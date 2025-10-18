@@ -16,6 +16,7 @@ fun main() = application {
         App(
             messages = messages,
             onSendClick = viewModel::onSendMessageClick,
+            onClearClick = viewModel::onClearClick
         )
     }
 }

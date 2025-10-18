@@ -8,6 +8,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -27,6 +28,7 @@ import androidx.compose.ui.unit.sp
 fun App(
     messages: List<ChatItem>,
     onSendClick: (String) -> Unit,
+    onClearClick: () -> Unit,
 ) {
     MaterialTheme {
         Column(
@@ -49,9 +51,22 @@ fun App(
                 }
             }
             Spacer(modifier = Modifier.weight(1f))
-            ChatInputBar(
-                onSendClick = onSendClick,
-            )
+            Row(
+                modifier = Modifier
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                ChatInputBar(
+                    modifier = Modifier.weight(1f),
+                    onSendClick = onSendClick,
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Button(
+                    onClick = onClearClick
+                ) {
+                    Text("Очистить")
+                }
+            }
         }
     }
 }
@@ -117,7 +132,6 @@ private fun ChatInputBar(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(8.dp)
             .background(Color.White, RoundedCornerShape(24.dp))
             .border(1.dp, Color(0xFFE0E0E0), RoundedCornerShape(24.dp))
             .padding(horizontal = 12.dp, vertical = 8.dp),

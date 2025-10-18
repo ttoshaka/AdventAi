@@ -1,14 +1,17 @@
 package ru.toshaka.advent.ui
 
+import androidx.room.Room
+import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import ru.toshaka.advent.data.DeepSeekApi
+import ru.toshaka.advent.data.db.AppDatabase
+import ru.toshaka.advent.data.db.MessagesRepository
 import ru.toshaka.advent.data.model.Type
+import java.io.File
 
 class MainViewModel {
 
@@ -17,9 +20,10 @@ class MainViewModel {
     private val json = Json {
         classDiscriminator = "type"
     }
+    private val database = getRoomDatabase()
+    private val messageRepository = MessagesRepository(database.getDao())
 
-    val chatItems get() = _chatItems.asStateFlow()
-    private val _chatItems = MutableStateFlow<List<ChatItem>>(emptyList())
+    val chatItems get() = messageRepository.getAll()
 
     fun onSendMessageClick(text: String) {
         val item = ChatItem.ChatMessage(
@@ -36,7 +40,27 @@ class MainViewModel {
         }
     }
 
+    fun onClearClick() {
+        viewModelScope.launch {
+            messageRepository.clear()
+        }
+    }
+
     private fun addChatItem(item: ChatItem) {
-        _chatItems.value += item
+        viewModelScope.launch {
+            messageRepository.save(item)
+        }
+    }
+
+    private fun getRoomDatabase(): AppDatabase {
+        return Room.databaseBuilder<AppDatabase>(
+            name = File(
+                System.getProperty("java.io.tmpdir"),
+                "my_room.db"
+            ).absolutePath
+        )
+            .setDriver(BundledSQLiteDriver())
+            .setQueryCoroutineContext(Dispatchers.IO)
+            .build()
     }
 }
