@@ -1,4 +1,4 @@
-package ru.toshaka.advent.data.model
+package ru.toshaka.advent.data
 
 import io.ktor.client.*
 import io.ktor.client.call.*
@@ -12,6 +12,9 @@ import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
+import ru.toshaka.advent.data.model.DeepSeekRequest
+import ru.toshaka.advent.data.model.DeepSeekResponse
+import ru.toshaka.advent.data.model.JsonDescription
 
 class DeepSeekApi {
     private val client = HttpClient(CIO) {
@@ -43,12 +46,7 @@ class DeepSeekApi {
         val requestBody = DeepSeekRequest(
             messages = listOf(
                 DeepSeekRequest.DeepSeekMessage(
-                    content = "Ты AI-шутник, который придумывает шутки в формате вопрос-ответ" +
-                            "Отвечай в следующем json-формате:" +
-                            "{\n" +
-                            "  \"question\": \"Вопрос\",\n" +
-                            "  \"answer\": \"Ответ\"\n" +
-                            "}",
+                    content = "Ты AI-ассистент. Твой ответ должен соответствовать следующему формату:\n$JsonDescription",
                     role = "system"
                 ),
                 DeepSeekRequest.DeepSeekMessage(

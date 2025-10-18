@@ -1,4 +1,4 @@
-package ru.toshaka.advent
+package ru.toshaka.advent.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -46,16 +46,7 @@ fun App(
                             isOwnMessage = messageItem.isOwnMessage,
                         )
                     }
-
-                    is ChatItem.ChatJoke -> {
-                        ChatJokeItem(
-                            question = messageItem.question,
-                            answer = messageItem.answer,
-                            authorName = messageItem.authorName,
-                        )
-                    }
                 }
-
             }
             Spacer(modifier = Modifier.weight(1f))
             ChatInputBar(
@@ -66,7 +57,7 @@ fun App(
 }
 
 @Composable
-fun ChatMessageItem(
+private fun ChatMessageItem(
     authorName: String,
     messageText: String,
     debugInfo: String?,
@@ -117,57 +108,7 @@ fun ChatMessageItem(
 }
 
 @Composable
-fun ChatJokeItem(
-    question: String,
-    answer: String,
-    authorName: String,
-    maxWidthFraction: Float = 0.5f,
-    modifier: Modifier = Modifier
-) {
-    BoxWithConstraints(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 4.dp),
-        contentAlignment = Alignment.CenterStart
-    ) {
-        val messageMaxWidth = maxWidth * maxWidthFraction
-
-        Column(
-            modifier = Modifier
-                .widthIn(max = messageMaxWidth)
-                .background(
-                    color = Color(0xFFFFFFFF),
-                    shape = RoundedCornerShape(12.dp)
-                )
-                .border(1.dp, Color(0xFFE0E0E0), RoundedCornerShape(12.dp))
-                .padding(16.dp)
-        ) {
-            Text(
-                text = authorName,
-                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                color = Color.Gray
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = question,
-                style = MaterialTheme.typography.bodyLarge,
-                fontSize = 20.sp,
-                color = Color.Black
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = answer,
-                style = MaterialTheme.typography.bodyMedium,
-                fontSize = 16.sp,
-                color = Color.Gray
-            )
-        }
-    }
-}
-
-
-@Composable
-fun ChatInputBar(
+private fun ChatInputBar(
     onSendClick: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {

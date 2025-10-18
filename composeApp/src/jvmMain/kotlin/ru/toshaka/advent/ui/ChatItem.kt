@@ -1,4 +1,4 @@
-package ru.toshaka.advent
+package ru.toshaka.advent.ui
 
 sealed interface ChatItem {
 
@@ -7,11 +7,5 @@ sealed interface ChatItem {
         val messageText: String,
         val debugInfo: String?,
         val isOwnMessage: Boolean = false,
-    ) : ChatItem
-
-    data class ChatJoke(
-        val question: String,
-        val answer: String,
-        val authorName: String,
     ) : ChatItem
 }
