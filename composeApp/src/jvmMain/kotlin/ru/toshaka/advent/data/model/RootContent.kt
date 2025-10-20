@@ -31,3 +31,13 @@ sealed interface Type {
 }
 
 val JsonDescription = json.encodeToString(RootContentDescription)
+
+val example1 = " \"json\": {\n" +
+        "        \"type\": \"question\",\n" +
+        "        \"content\": \"Привет! Как тебя зовут?\"\n" +
+        "    }"
+
+val example2 = " \"json\": {\n" +
+        "        \"type\": \"text\",\n" +
+        "        \"content\": \"Привет!\"\n" +
+        "    }"

@@ -23,7 +23,7 @@ class MainViewModel {
     private val database = getRoomDatabase()
     private val messageRepository = MessagesRepository(database.getDao())
 
-    val chatItems get() = messageRepository.getAll()
+    val chatItems get() = messageRepository.getAllAsFlow()
 
     fun onSendMessageClick(text: String) {
         val item = ChatItem.ChatMessage(
@@ -32,9 +32,14 @@ class MainViewModel {
             debugInfo = null,
             isOwnMessage = true
         )
-        addChatItem(item)
         viewModelScope.launch {
-            val response = deepSeekApi.sendChat(text).choices.first().message.content
+            addChatItem(item)
+            val previousMessages = messageRepository.getAll().map {
+                when (it) {
+                    is ChatItem.ChatMessage -> it.messageText to if (it.isOwnMessage) "user" else "assistant"
+                }
+            }
+            val response = deepSeekApi.sendChat(previousMessages).choices.first().message.content
             val message = json.decodeFromString<Type>(response).toChatItem()
             addChatItem(message)
         }
@@ -46,10 +51,8 @@ class MainViewModel {
         }
     }
 
-    private fun addChatItem(item: ChatItem) {
-        viewModelScope.launch {
-            messageRepository.save(item)
-        }
+    private suspend fun addChatItem(item: ChatItem) {
+        messageRepository.save(item)
     }
 
     private fun getRoomDatabase(): AppDatabase {

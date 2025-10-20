@@ -13,25 +13,32 @@ class MessagesRepository(
             is ChatItem.ChatMessage -> MessageEntity(
                 content = chatItem.messageText,
                 author = chatItem.authorName,
-                isOwnMessage = chatItem.isOwnMessage,
+                role = if (chatItem.isOwnMessage) MessageEntity.Roles.user else MessageEntity.Roles.assistant,
             )
         }
         messageDao.insert(message)
     }
 
-    fun getAll(): Flow<List<ChatItem>> =
-        messageDao.getAll().map { messages ->
-            messages.map { message ->
-                ChatItem.ChatMessage(
-                    authorName = message.author,
-                    messageText = message.content,
-                    debugInfo = "From DB",
-                    isOwnMessage = message.isOwnMessage,
-                )
-            }
+    fun getAllAsFlow(): Flow<List<ChatItem>> =
+        messageDao.getAllAsFlow().map { messages ->
+            messages.map { it.toItem() }
         }
+
+    suspend fun getAll(): List<ChatItem> =
+        messageDao.getAll().map { it.toItem() }
 
     suspend fun clear() {
         messageDao.clearAllMessages()
     }
+
+    private fun MessageEntity.toItem(): ChatItem =
+        ChatItem.ChatMessage(
+            authorName = author,
+            messageText = content,
+            debugInfo = "From DB",
+            isOwnMessage = when (role) {
+                MessageEntity.Roles.user -> true
+                MessageEntity.Roles.assistant -> false
+            },
+        )
 }

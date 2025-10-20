@@ -12,9 +12,7 @@ import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
-import ru.toshaka.advent.data.model.DeepSeekRequest
-import ru.toshaka.advent.data.model.DeepSeekResponse
-import ru.toshaka.advent.data.model.JsonDescription
+import ru.toshaka.advent.data.model.*
 
 class DeepSeekApi {
     private val client = HttpClient(CIO) {
@@ -42,18 +40,33 @@ class DeepSeekApi {
         }
     }
 
-    suspend fun sendChat(message: String): DeepSeekResponse {
+    suspend fun sendChat(messages: List<Pair<String, String>>): DeepSeekResponse {
         val requestBody = DeepSeekRequest(
-            messages = listOf(
-                DeepSeekRequest.DeepSeekMessage(
-                    content = "Ты AI-ассистент. Твой ответ должен соответствовать следующему формату:\n$JsonDescription",
-                    role = "system"
-                ),
-                DeepSeekRequest.DeepSeekMessage(
-                    content = message,
-                    role = "user"
+            messages = buildList {
+                add(
+                    DeepSeekRequest.DeepSeekMessage(
+                        content = "Ты AI-ассистент. Ты должен собрать следующую информацию о пользователе:\n" +
+                                "1)Имя\n" +
+                                "2)Дата рождения\n" +
+                                "3)Город проживания\n" +
+                                "4)Любимый язык программирования\n" +
+                                "Если пользователь не указал какую либо информацию, ты должен попросить её указать. Один параметр за один раз.\n" +
+                                "Когда все данные будут собраны, уведоми об этом пользователя и напишу информацию.\n" +
+                                "Твой ответ должен соответствовать следующему формату:\n$JsonDescription\n" +
+                                "Примеры:\n$example1\n$example2",
+                        role = "system"
+                    )
                 )
-            ),
+                addAll(
+                    messages.map {
+                        DeepSeekRequest.DeepSeekMessage(
+                            content = it.first,
+                            role = it.second,
+                        )
+                    }
+                )
+
+            },
             model = "deepseek-chat",
             responseFormat = DeepSeekRequest.ResponseFormat("json_object"),
         )

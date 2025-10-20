@@ -12,10 +12,10 @@ interface MessageDao {
     suspend fun insert(item: MessageEntity)
 
     @Query("SELECT * FROM MessageEntity")
-    fun getAll(): Flow<List<MessageEntity>>
+    fun getAllAsFlow(): Flow<List<MessageEntity>>
 
     @Query("SELECT * FROM MessageEntity")
-    suspend fun getAllSync(): List<MessageEntity>
+    suspend fun getAll(): List<MessageEntity>
 
     @Query("DELETE FROM MessageEntity")
     suspend fun clearAllMessages()
