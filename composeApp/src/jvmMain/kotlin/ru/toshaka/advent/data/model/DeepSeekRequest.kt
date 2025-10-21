@@ -23,7 +23,7 @@ data class DeepSeekRequest(
     @SerialName("stream_options")
     val streamOptions: String? = null,
     @SerialName("temperature")
-    val temperature: Int = 1,
+    val temperature: Float = 1f,
     @SerialName("top_p")
     val topP: Int = 1,
     @SerialName("tools")

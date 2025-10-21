@@ -9,13 +9,13 @@ private val Text = Type.Text("Обычное текстовое сообщени
 private val Question = Type.Question("Текстовое сообщене с вопросом к пользователю. В это поле указывай текст вопроса к пользователю")
 private val RootContentDescription = RootContent(
     type = "Возможные варианты: text, question.",
-    json = "Здесь указаны соответствующие json-схемы для типов:\n${json.encodeToString(listOf(Text, Question))}",
+    content = "Здесь указаны соответствующие json-схемы для типов:\n${json.encodeToString(listOf(Text, Question))}",
 )
 
 @Serializable
 private data class RootContent(
     val type: String,
-    val json: String,
+    val content: String,
 )
 
 @Serializable

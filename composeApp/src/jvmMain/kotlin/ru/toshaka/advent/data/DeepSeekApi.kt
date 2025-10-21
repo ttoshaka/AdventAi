@@ -40,20 +40,23 @@ class DeepSeekApi {
         }
     }
 
-    suspend fun sendChat(messages: List<Pair<String, String>>): DeepSeekResponse {
+    suspend fun sendChat(
+        messages: List<Pair<String, String>>,
+        temperature: Float = 1f,
+    ): DeepSeekResponse {
+        println(JsonDescription)
         val requestBody = DeepSeekRequest(
             messages = buildList {
                 add(
                     DeepSeekRequest.DeepSeekMessage(
-                        content = "Ты AI-ассистент. Ты должен собрать следующую информацию о пользователе:\n" +
-                                "1)Имя\n" +
-                                "2)Дата рождения\n" +
-                                "3)Город проживания\n" +
-                                "4)Любимый язык программирования\n" +
-                                "Если пользователь не указал какую либо информацию, ты должен попросить её указать. Один параметр за один раз.\n" +
-                                "Когда все данные будут собраны, уведоми об этом пользователя и напишу информацию.\n" +
-                                "Твой ответ должен соответствовать следующему формату:\n$JsonDescription\n" +
-                                "Примеры:\n$example1\n$example2",
+                        content = """
+                            Ты AI-ассистент. 
+                                Только один тип сообщения за раз.
+                                Ответ всегда должен содержать текст. Если у тебя нет вопроса или текста, то напиши почему тебе нечего ответить.
+                                Примеры:
+                                $example1
+                                $example2
+                                """,
                         role = "system"
                     )
                 )
@@ -69,6 +72,7 @@ class DeepSeekApi {
             },
             model = "deepseek-chat",
             responseFormat = DeepSeekRequest.ResponseFormat("json_object"),
+            temperature = temperature,
         )
 
         return client.post(URL) {
@@ -78,7 +82,7 @@ class DeepSeekApi {
     }
 
     companion object {
-        const val KEY: String = "KEY"
+        const val KEY: String = "sk-c388a56e101b4d989e16d87c6c080658"
         private const val URL: String = "https://api.deepseek.com/chat/completions"
         private const val TIMEOUT: Long = 60_000
     }

@@ -1,29 +1,27 @@
 package ru.toshaka.advent.ui
 
-import androidx.room.Room
-import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import ru.toshaka.advent.data.DeepSeekApi
-import ru.toshaka.advent.data.db.AppDatabase
 import ru.toshaka.advent.data.db.MessagesRepository
 import ru.toshaka.advent.data.model.Type
-import java.io.File
 
-class MainViewModel {
+class MainViewModel(
+    private val id: Long,
+    val temp: Float,
+    private val deepSeekApi: DeepSeekApi,
+    private val messageRepository: MessagesRepository,
+) {
 
-    private val deepSeekApi = DeepSeekApi()
     private val viewModelScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private val json = Json {
         classDiscriminator = "type"
     }
-    private val database = getRoomDatabase()
-    private val messageRepository = MessagesRepository(database.getDao())
 
-    val chatItems get() = messageRepository.getAllAsFlow()
+    val chatItems get() = messageRepository.getAllAsFlow(id)
 
     fun onSendMessageClick(text: String) {
         val item = ChatItem.ChatMessage(
@@ -34,13 +32,20 @@ class MainViewModel {
         )
         viewModelScope.launch {
             addChatItem(item)
-            val previousMessages = messageRepository.getAll().map {
+            val previousMessages = messageRepository.getAll(id).map {
                 when (it) {
                     is ChatItem.ChatMessage -> it.messageText to if (it.isOwnMessage) "user" else "assistant"
                 }
             }
-            val response = deepSeekApi.sendChat(previousMessages).choices.first().message.content
-            val message = json.decodeFromString<Type>(response).toChatItem()
+            val response = deepSeekApi.sendChat(previousMessages, temp)
+            val tokens = response.usage!!
+            val message = json.decodeFromString<Type>(response.choices.first().message.content).toChatItem(
+                buildString {
+                    append("totalTokens ${tokens.totalTokens}\n")
+                    append("promptTokens ${tokens.promptTokens}\n")
+                    append("completionTokens ${tokens.completionTokens}")
+                }
+            )
             addChatItem(message)
         }
     }
@@ -52,18 +57,7 @@ class MainViewModel {
     }
 
     private suspend fun addChatItem(item: ChatItem) {
-        messageRepository.save(item)
+        messageRepository.save(item, id)
     }
 
-    private fun getRoomDatabase(): AppDatabase {
-        return Room.databaseBuilder<AppDatabase>(
-            name = File(
-                System.getProperty("java.io.tmpdir"),
-                "my_room.db"
-            ).absolutePath
-        )
-            .setDriver(BundledSQLiteDriver())
-            .setQueryCoroutineContext(Dispatchers.IO)
-            .build()
-    }
 }

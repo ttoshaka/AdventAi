@@ -1,8 +1,8 @@
 package ru.toshaka.advent.ui
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.*
+import androidx.compose.foundation.gestures.ScrollableState
+import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -23,48 +23,68 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.flow.collectLatest
 
 @Composable
 fun App(
-    messages: List<ChatItem>,
-    onSendClick: (String) -> Unit,
-    onClearClick: () -> Unit,
+    viewModels: List<MainViewModel>,
 ) {
     MaterialTheme {
-        Column(
+        Row(
             modifier = Modifier
                 .background(MaterialTheme.colorScheme.primaryContainer)
                 .safeContentPadding()
-                .fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
+                .fillMaxSize()
         ) {
-            messages.forEach { messageItem ->
-                when (messageItem) {
-                    is ChatItem.ChatMessage -> {
-                        ChatMessageItem(
-                            authorName = messageItem.authorName,
-                            messageText = messageItem.messageText,
-                            debugInfo = messageItem.debugInfo,
-                            isOwnMessage = messageItem.isOwnMessage,
-                        )
-                    }
-                }
-            }
-            Spacer(modifier = Modifier.weight(1f))
-            Row(
-                modifier = Modifier
-                    .padding(horizontal = 12.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                ChatInputBar(
-                    modifier = Modifier.weight(1f),
-                    onSendClick = onSendClick,
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Button(
-                    onClick = onClearClick
+            viewModels.forEach { viewModel ->
+                val scrollState = rememberScrollState()
+
+                var messages by remember { mutableStateOf(emptyList<ChatItem>()) }
+                LaunchedEffect(Unit) { viewModel.chatItems.collectLatest { messages = it } }
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .weight(1f),
+                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    Text("Очистить")
+                    Text("Температура = ${viewModel.temp}")
+                    Column(
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .weight(1f)
+                            .verticalScroll(scrollState),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        messages.forEach { messageItem ->
+                            when (messageItem) {
+                                is ChatItem.ChatMessage -> {
+                                    ChatMessageItem(
+                                        authorName = messageItem.authorName,
+                                        messageText = messageItem.messageText,
+                                        debugInfo = messageItem.debugInfo,
+                                        isOwnMessage = messageItem.isOwnMessage,
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    Row(
+                        modifier = Modifier
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        ChatInputBar(
+                            modifier = Modifier.weight(1f),
+                            onSendClick = viewModel::onSendMessageClick,
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Button(
+                            onClick = viewModel::onClearClick
+                        ) {
+                            Text("Очистить")
+                        }
+                    }
                 }
             }
         }
