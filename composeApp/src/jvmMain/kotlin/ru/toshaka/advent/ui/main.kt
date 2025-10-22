@@ -17,9 +17,9 @@ fun main() = application {
 
 
     val viewModels = listOf(
-        MainViewModel(1, 0f, deepSeekApi, messageRepository),
-        MainViewModel(2, 0.7f, deepSeekApi, messageRepository),
-        MainViewModel(3, 1.2f, deepSeekApi, messageRepository),
+        MainViewModel(1, "meta-llama/Llama-3.3-70B-Instruct", deepSeekApi, messageRepository),
+        MainViewModel(2, "openai/gpt-oss-20b", deepSeekApi, messageRepository),
+        MainViewModel(3, "moonshotai/Kimi-K2-Instruct-0905", deepSeekApi, messageRepository),
     )
 
     Window(

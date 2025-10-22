@@ -53,7 +53,9 @@ data class DeepSeekResponse(
         @SerialName("prompt_cache_hit_tokens")
         val promptCacheHitTokens: Int? = null,
         @SerialName("prompt_cache_miss_tokens")
-        val promptCacheMissTokens: Int? = null
+        val promptCacheMissTokens: Int? = null,
+        @SerialName("total_time")
+        val totalTime: Float? = null,
     ) {
         @Serializable
         data class PromptTokensDetails(

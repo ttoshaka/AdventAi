@@ -48,7 +48,8 @@ fun App(
                         .weight(1f),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    Text("Температура = ${viewModel.temp}")
+                    Text("Модель = ${viewModel.model}")
+                    Spacer(modifier = Modifier.height(8.dp))
                     Column(
                         modifier = Modifier
                             .fillMaxHeight()

@@ -12,7 +12,8 @@ import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
-import ru.toshaka.advent.data.model.*
+import ru.toshaka.advent.data.model.DeepSeekRequest
+import ru.toshaka.advent.data.model.DeepSeekResponse
 
 class DeepSeekApi {
     private val client = HttpClient(CIO) {
@@ -42,20 +43,15 @@ class DeepSeekApi {
 
     suspend fun sendChat(
         messages: List<Pair<String, String>>,
+        model: String,
         temperature: Float = 1f,
     ): DeepSeekResponse {
-        println(JsonDescription)
         val requestBody = DeepSeekRequest(
             messages = buildList {
                 add(
                     DeepSeekRequest.DeepSeekMessage(
                         content = """
-                            Ты AI-ассистент. 
-                                Только один тип сообщения за раз.
-                                Ответ всегда должен содержать текст. Если у тебя нет вопроса или текста, то напиши почему тебе нечего ответить.
-                                Примеры:
-                                $example1
-                                $example2
+                            Reasoning: low
                                 """,
                         role = "system"
                     )
@@ -70,8 +66,8 @@ class DeepSeekApi {
                 )
 
             },
-            model = "deepseek-chat",
-            responseFormat = DeepSeekRequest.ResponseFormat("json_object"),
+            model = model,
+            responseFormat = DeepSeekRequest.ResponseFormat("text"),
             temperature = temperature,
         )
 
@@ -82,8 +78,8 @@ class DeepSeekApi {
     }
 
     companion object {
-        const val KEY: String = "sk-c388a56e101b4d989e16d87c6c080658"
-        private const val URL: String = "https://api.deepseek.com/chat/completions"
+        const val KEY: String = "KEY"
+        private const val URL: String = "https://router.huggingface.co/v1/chat/completions"
         private const val TIMEOUT: Long = 60_000
     }
 }

@@ -7,11 +7,10 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import ru.toshaka.advent.data.DeepSeekApi
 import ru.toshaka.advent.data.db.MessagesRepository
-import ru.toshaka.advent.data.model.Type
 
 class MainViewModel(
     private val id: Long,
-    val temp: Float,
+    val model: String,
     private val deepSeekApi: DeepSeekApi,
     private val messageRepository: MessagesRepository,
 ) {
@@ -37,14 +36,18 @@ class MainViewModel(
                     is ChatItem.ChatMessage -> it.messageText to if (it.isOwnMessage) "user" else "assistant"
                 }
             }
-            val response = deepSeekApi.sendChat(previousMessages, temp)
-            val tokens = response.usage!!
-            val message = json.decodeFromString<Type>(response.choices.first().message.content).toChatItem(
-                buildString {
-                    append("totalTokens ${tokens.totalTokens}\n")
-                    append("promptTokens ${tokens.promptTokens}\n")
-                    append("completionTokens ${tokens.completionTokens}")
-                }
+            val response = deepSeekApi.sendChat(previousMessages, model)
+            val usage = response.usage!!
+            val message = ChatItem.ChatMessage(
+                authorName = "Ai",
+                messageText = response.choices.first().message.content,
+                debugInfo = buildString {
+                    append("totalTokens ${usage.totalTokens}\n")
+                    append("promptTokens ${usage.promptTokens}\n")
+                    append("completionTokens ${usage.completionTokens}\n")
+                    append("totalTime ${usage.totalTime}")
+                },
+                isOwnMessage = false
             )
             addChatItem(message)
         }
