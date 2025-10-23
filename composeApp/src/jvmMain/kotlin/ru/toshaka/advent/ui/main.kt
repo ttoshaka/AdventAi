@@ -23,12 +23,20 @@ fun main() = application {
         },
         messageRepository = messageRepository,
     )
+    val cotViewModel = MainViewModel(
+        agent = DeepSeekChatAgent {
+            name = "Chain of Thoughts agent"
+            systemPrompt = "Ты AI-ассистент. Решай задачи пошагово."
+            history = messageHistory("Chain of Thoughts agent", messageRepository)
+        },
+        messageRepository = messageRepository,
+    )
 
     Window(
         onCloseRequest = ::exitApplication,
         title = "AdventAi_3",
     ) {
-        App(listOf(viewModel))
+        App(listOf(viewModel, cotViewModel))
     }
 }
 
