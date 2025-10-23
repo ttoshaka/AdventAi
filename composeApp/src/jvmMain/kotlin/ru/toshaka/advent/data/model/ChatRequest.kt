@@ -4,9 +4,9 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class DeepSeekRequest(
+data class ChatRequest(
     @SerialName("messages")
-    val messages: List<DeepSeekMessage>,
+    val messages: List<ChatMessage>,
     @SerialName("model")
     val model: String,
     @SerialName("frequency_penalty")
@@ -23,7 +23,7 @@ data class DeepSeekRequest(
     @SerialName("stream_options")
     val streamOptions: String? = null,
     @SerialName("temperature")
-    val temperature: Int = 1,
+    val temperature: Float = 1f,
     @SerialName("top_p")
     val topP: Int = 1,
     @SerialName("tools")
@@ -37,7 +37,7 @@ data class DeepSeekRequest(
 ) {
 
     @Serializable
-    data class DeepSeekMessage(
+    data class ChatMessage(
         @SerialName("content")
         val content: String,
 

@@ -1,8 +1,6 @@
 package ru.toshaka.advent.ui
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -23,19 +21,61 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.flow.collectLatest
 
 @Composable
 fun App(
-    messages: List<ChatItem>,
-    onSendClick: (String) -> Unit,
-    onClearClick: () -> Unit,
+    viewModels: List<MainViewModel>,
 ) {
     MaterialTheme {
+        Row(
+            modifier = Modifier
+                .background(MaterialTheme.colorScheme.background)
+                .safeContentPadding()
+                .fillMaxSize()
+                .padding(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            viewModels.forEach { viewModel ->
+                var messages by remember { mutableStateOf(emptyList<ChatItem>()) }
+                LaunchedEffect(Unit) { viewModel.chatItems.collectLatest { messages = it } }
+                ChatWindow(
+                    messages = messages,
+                    agentName = viewModel.agentName,
+                    onSendMessageClick = viewModel::onSendMessageClick,
+                    onClearClick = viewModel::onClearClick,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun RowScope.ChatWindow(
+    messages: List<ChatItem>,
+    agentName: String,
+    onSendMessageClick: (String) -> Unit,
+    onClearClick: () -> Unit,
+) {
+    val scrollState = rememberScrollState()
+
+    Column(
+        modifier = Modifier
+            .fillMaxHeight()
+            .background(
+                color = MaterialTheme.colorScheme.primaryContainer,
+                shape = RoundedCornerShape(8.dp)
+            )
+            .weight(1f),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(agentName)
+        Spacer(modifier = Modifier.height(8.dp))
         Column(
             modifier = Modifier
-                .background(MaterialTheme.colorScheme.primaryContainer)
-                .safeContentPadding()
-                .fillMaxSize(),
+                .fillMaxHeight()
+                .weight(1f)
+                .verticalScroll(scrollState),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             messages.forEach { messageItem ->
@@ -50,22 +90,21 @@ fun App(
                     }
                 }
             }
-            Spacer(modifier = Modifier.weight(1f))
-            Row(
-                modifier = Modifier
-                    .padding(horizontal = 12.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
+        }
+        Row(
+            modifier = Modifier
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            ChatInputBar(
+                modifier = Modifier.weight(1f),
+                onSendClick = onSendMessageClick,
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Button(
+                onClick = onClearClick
             ) {
-                ChatInputBar(
-                    modifier = Modifier.weight(1f),
-                    onSendClick = onSendClick,
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Button(
-                    onClick = onClearClick
-                ) {
-                    Text("Очистить")
-                }
+                Text("Очистить")
             }
         }
     }
@@ -124,11 +163,25 @@ private fun ChatMessageItem(
 
 @Composable
 private fun ChatInputBar(
+    modifier: Modifier,
     onSendClick: (String) -> Unit,
-    modifier: Modifier = Modifier
 ) {
     var message by remember { mutableStateOf("") }
+    ChatInputBarStateless(
+        modifier = modifier,
+        message = message,
+        onMessage = { message = it },
+        onSendClick = onSendClick,
+    )
+}
 
+@Composable
+private fun ChatInputBarStateless(
+    modifier: Modifier = Modifier,
+    message: String,
+    onMessage: (String) -> Unit,
+    onSendClick: (String) -> Unit,
+) {
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -139,7 +192,7 @@ private fun ChatInputBar(
     ) {
         BasicTextField(
             value = message,
-            onValueChange = { message = it },
+            onValueChange = onMessage,
             singleLine = true,
             textStyle = MaterialTheme.typography.bodyMedium.copy(color = Color.Black),
             cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
@@ -152,7 +205,7 @@ private fun ChatInputBar(
                 onSend = {
                     if (message.isNotBlank()) {
                         onSendClick(message)
-                        message = ""
+                        onMessage("")
                     }
                 }
             ),
@@ -178,7 +231,7 @@ private fun ChatInputBar(
                 .padding(start = 8.dp)
                 .clickable(enabled = message.isNotBlank()) {
                     onSendClick(message)
-                    message = ""
+                    onMessage("")
                 },
             fontSize = 20.sp,
             textAlign = TextAlign.Center

@@ -8,24 +8,26 @@ class MessagesRepository(
     private val messageDao: MessageDao,
 ) {
 
-    suspend fun save(chatItem: ChatItem) {
+    suspend fun save(chatItem: ChatItem, chatId: String) {
         val message = when (chatItem) {
             is ChatItem.ChatMessage -> MessageEntity(
                 content = chatItem.messageText,
                 author = chatItem.authorName,
                 role = if (chatItem.isOwnMessage) MessageEntity.Roles.user else MessageEntity.Roles.assistant,
+                chatId = chatId,
+                debugInfo = chatItem.debugInfo,
             )
         }
         messageDao.insert(message)
     }
 
-    fun getAllAsFlow(): Flow<List<ChatItem>> =
+    fun getAllAsFlow(chatId: String): Flow<List<ChatItem>> =
         messageDao.getAllAsFlow().map { messages ->
-            messages.map { it.toItem() }
+            messages.filter { it.chatId == chatId }.map { it.toItem() }
         }
 
-    suspend fun getAll(): List<ChatItem> =
-        messageDao.getAll().map { it.toItem() }
+    suspend fun getAll(chatId: String): List<ChatItem> =
+        messageDao.getAll().filter { it.chatId == chatId }.map { it.toItem() }
 
     suspend fun clear() {
         messageDao.clearAllMessages()
@@ -35,7 +37,7 @@ class MessagesRepository(
         ChatItem.ChatMessage(
             authorName = author,
             messageText = content,
-            debugInfo = "From DB",
+            debugInfo = debugInfo,
             isOwnMessage = when (role) {
                 MessageEntity.Roles.user -> true
                 MessageEntity.Roles.assistant -> false

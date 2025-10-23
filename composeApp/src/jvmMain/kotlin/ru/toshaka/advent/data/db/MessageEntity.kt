@@ -7,9 +7,11 @@ import androidx.room.TypeConverter
 @Entity
 data class MessageEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val chatId: String,
     val content: String,
     val author: String,
     val role: Roles,
+    val debugInfo: String?,
 ) {
     enum class Roles {
         user, assistant

@@ -4,7 +4,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class DeepSeekResponse(
+data class ChatResponse(
     @SerialName("id")
     val id: String,
     @SerialName("object")
@@ -53,7 +53,9 @@ data class DeepSeekResponse(
         @SerialName("prompt_cache_hit_tokens")
         val promptCacheHitTokens: Int? = null,
         @SerialName("prompt_cache_miss_tokens")
-        val promptCacheMissTokens: Int? = null
+        val promptCacheMissTokens: Int? = null,
+        @SerialName("total_time")
+        val totalTime: Float? = null,
     ) {
         @Serializable
         data class PromptTokensDetails(
