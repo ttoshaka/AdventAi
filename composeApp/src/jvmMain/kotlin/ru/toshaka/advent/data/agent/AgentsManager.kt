@@ -1,0 +1,108 @@
+package ru.toshaka.advent.data.agent
+
+import androidx.room.Room
+import androidx.sqlite.driver.bundled.BundledSQLiteDriver
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.Flow
+import ru.toshaka.advent.data.db.AppDatabase
+import ru.toshaka.advent.data.db.MessageEntity
+import ru.toshaka.advent.data.db.MessagesRepository
+import ru.toshaka.advent.ui.ChatItem
+import java.io.File
+
+class AgentsManager {
+    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private val database = getRoomDatabase()
+    private val messageRepository = MessagesRepository(database.getDao())
+    private val buss = MessageBus()
+    private val agents: MutableList<Agent<*>> = mutableListOf()
+
+    init {
+        scope.launch {
+            buss.flow.collect { response ->
+                agents.forEach { agent ->
+                    val receiveType = agent.receiveType
+                    if (receiveType != null && response.javaClass == receiveType.java) {
+                        val message = MessageEntity(
+                            content = response.toString(),
+                            author = "TODO",
+                            role = MessageEntity.Roles.user,
+                            chatId = agent.name,
+                            debugInfo = null,
+                        )
+                        saveMessage(message)
+                        agent.invoke(response.toString())
+                    }
+                }
+            }
+        }
+    }
+
+    fun clear() {
+        scope.launch {
+            messageRepository.clear()
+        }
+    }
+
+    fun <R : AiResponse> addAgent(config: AgentConfig<R>): Flow<List<ChatItem>> {
+        val agent = Agent(config.apply {
+            onAiResponse = { response ->
+                buss.send(response)
+                saveMessage(
+                    MessageEntity(
+                        content = response.toString(),
+                        author = config.name,
+                        role = MessageEntity.Roles.assistant,
+                        chatId = config.name,
+                        debugInfo = null,
+                    )
+                )
+            }
+            history = messageHistory(config.name, messageRepository)
+        }).apply(agents::add)
+
+        return messageRepository.getAllAsFlow(agent.name)
+    }
+
+    fun onUserMessage(text: String) {
+        agents.filter { it.isReceiveUserMessage }.forEach { agent ->
+            saveMessage(
+                MessageEntity(
+                    content = text,
+                    author = "User",
+                    role = MessageEntity.Roles.user,
+                    chatId = agent.name,
+                    debugInfo = null,
+                )
+            )
+            agent.invoke(text)
+        }
+    }
+
+    private fun saveMessage(message: MessageEntity) {
+        scope.launch {
+            messageRepository.save(message)
+        }
+    }
+
+
+    private fun getRoomDatabase(): AppDatabase =
+        Room.databaseBuilder<AppDatabase>(File(System.getProperty("java.io.tmpdir"), "my_room.db").absolutePath)
+            .setDriver(BundledSQLiteDriver())
+            .setQueryCoroutineContext(Dispatchers.IO)
+            .build()
+
+    private fun messageHistory(
+        chatId: String,
+        messageRepository: MessagesRepository
+    ): () -> List<Pair<String, String>> = {
+        runBlocking {
+            val messages = messageRepository.getAll(chatId)
+            messages.map {
+                when (it) {
+                    is ChatItem.ChatMessage -> run { if (it.isOwnMessage) "user" else "assistant" } to it.messageText
+                }
+            }
+        }
+    }
+}

@@ -21,11 +21,14 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collectLatest
 
 @Composable
 fun App(
-    viewModels: List<MainViewModel>,
+    messageFlow: List<Flow<List<ChatItem>>>,
+    onSendMessageClick: (String) -> Unit,
+    onClearClick: () -> Unit,
 ) {
     MaterialTheme {
         Row(
@@ -36,14 +39,14 @@ fun App(
                 .padding(8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            viewModels.forEach { viewModel ->
+            messageFlow.forEach { flow ->
                 var messages by remember { mutableStateOf(emptyList<ChatItem>()) }
-                LaunchedEffect(Unit) { viewModel.chatItems.collectLatest { messages = it } }
+                LaunchedEffect(Unit) { flow.collectLatest { messages = it } }
                 ChatWindow(
                     messages = messages,
-                    agentName = viewModel.agentName,
-                    onSendMessageClick = viewModel::onSendMessageClick,
-                    onClearClick = viewModel::onClearClick,
+                    agentName = "TODO",
+                    onSendMessageClick = onSendMessageClick,
+                    onClearClick = onClearClick,
                 )
             }
         }
