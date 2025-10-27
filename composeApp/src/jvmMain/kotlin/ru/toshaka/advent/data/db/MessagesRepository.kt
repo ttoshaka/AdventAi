@@ -8,16 +8,7 @@ class MessagesRepository(
     private val messageDao: MessageDao,
 ) {
 
-    suspend fun save(chatItem: ChatItem, chatId: String) {
-        val message = when (chatItem) {
-            is ChatItem.ChatMessage -> MessageEntity(
-                content = chatItem.messageText,
-                author = chatItem.authorName,
-                role = if (chatItem.isOwnMessage) MessageEntity.Roles.user else MessageEntity.Roles.assistant,
-                chatId = chatId,
-                debugInfo = chatItem.debugInfo,
-            )
-        }
+    suspend fun save(message: MessageEntity) {
         messageDao.insert(message)
     }
 

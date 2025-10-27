@@ -39,6 +39,10 @@ kotlin {
 
             implementation(libs.androidx.room.runtime)
             implementation(libs.androidx.sqlite.bundled)
+
+            implementation("org.jetbrains.kotlin:kotlin-reflect")
+            implementation("com.knuddels:jtokkit:1.1.0")
+
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

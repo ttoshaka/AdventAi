@@ -17,7 +17,7 @@ import ru.toshaka.advent.data.model.ChatRequest
 import ru.toshaka.advent.data.model.ChatResponse
 
 class AgentApi(
-    private val agentConfig: AgentConfig
+    private val agentConfig: AgentConfig<*>
 ) {
 
     private val client = HttpClient(CIO) {
@@ -72,7 +72,7 @@ class AgentApi(
                 }
             },
             model = agentConfig.model,
-            responseFormat = ChatRequest.ResponseFormat("text"),
+            responseFormat = ChatRequest.ResponseFormat("json_object"),
             temperature = agentConfig.temperature,
         )
 
