@@ -6,24 +6,27 @@ import ru.toshaka.advent.data.agent.AgentsManager
 import ru.toshaka.advent.data.agent.AiResponse
 import ru.toshaka.advent.data.agent.DeepSeekChatAgent
 
+
 fun main() = application {
     val agentsManagers = AgentsManager()
     val flow1 = agentsManagers.addAgent(
         DeepSeekChatAgent {
-            name = "Default agent"
-            systemPrompt =
-                "Ты AI-ассистент. Тебе нужно написать 1 метод на языке Kotlin, который будет выполнять поставленную задачу. В ответ должен быть только код."
-            outputFormats = listOf(AiResponse.KotlinCodeResponse::class)
+            name = "Optimizer agent"
+            systemPrompt = """
+                Ты AI-ассистент. Твоя задача сжать переданный тебе текст, оставив только необходимые для корректного ответа данные.
+                """
+            outputFormats = listOf(AiResponse.TextResponse::class)
             isReceiveUserMessage = true
         }
-    )
+    )//Короче, мне нужен норм такой рассках, размер у него должен быть что-то около 100-150 слов
     val flow2 = agentsManagers.addAgent(
         DeepSeekChatAgent {
-            name = "Answered agent"
-            systemPrompt =
-                "Ты AI-ассистент. Твоя обязанность придумать и написать один тест к переданному тебе методу на языке Kotlin."
-            inputFormats = AiResponse.KotlinCodeResponse::class
+            name = "Default agent"
+            systemPrompt = """
+                Ты AI-ассистент.
+                """
             outputFormats = listOf(AiResponse.TextResponse::class)
+            inputFormats = AiResponse.TextResponse::class
         }
     )
 

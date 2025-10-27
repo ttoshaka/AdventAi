@@ -35,7 +35,7 @@ class AgentConfig<R : AiResponse> {
 
     var history: () -> List<Pair<String, String>> = { emptyList() }
 
-    lateinit var onAiResponse: (R) -> Unit
+    lateinit var onAiResponse: (R, DebugInfo) -> Unit
 }
 
 class Agent<R : AiResponse>(private val config: AgentConfig<R>) {
@@ -49,7 +49,15 @@ class Agent<R : AiResponse>(private val config: AgentConfig<R>) {
     operator fun invoke(message: String) = scope.launch {
         val response = api(message, config.history())
         val mes = Json.decodeFromString<AiResponse>(response.choices.first().message.content) as R
-        config.onAiResponse(mes)
+        val usage = response.usage!!
+        config.onAiResponse(
+            mes, DebugInfo(
+                promptToken = usage.promptTokens,
+                completionToken = usage.completionTokens,
+                totalToken = usage.totalTokens,
+                agentName = name,
+            )
+        )
     }
 }
 

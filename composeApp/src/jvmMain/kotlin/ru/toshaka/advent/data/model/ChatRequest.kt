@@ -11,6 +11,7 @@ data class ChatRequest(
     val model: String,
     @SerialName("frequency_penalty")
     val frequencyPenalty: Int = 0,
+    @SerialName("max_tokens")
     val maxTokens: Int = 4096,
     @SerialName("presence_penalty")
     val presencePenalty: Int = 0,

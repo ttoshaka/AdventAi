@@ -19,13 +19,13 @@ class AgentsManager {
 
     init {
         scope.launch {
-            buss.flow.collect { response ->
+            buss.flow.collect { (response, debugInfo) ->
                 agents.forEach { agent ->
                     val receiveType = agent.receiveType
-                    if (receiveType != null && response.javaClass == receiveType.java) {
+                    if (receiveType != null && response.javaClass == receiveType.java && debugInfo.agentName != agent.name) {
                         val message = MessageEntity(
                             content = response.toString(),
-                            author = "TODO",
+                            author = debugInfo.agentName,
                             role = MessageEntity.Roles.user,
                             chatId = agent.name,
                             debugInfo = null,
@@ -46,15 +46,19 @@ class AgentsManager {
 
     fun <R : AiResponse> addAgent(config: AgentConfig<R>): Flow<List<ChatItem>> {
         val agent = Agent(config.apply {
-            onAiResponse = { response ->
-                buss.send(response)
+            onAiResponse = { response, debugInfo ->
+                buss.send(response, debugInfo)
                 saveMessage(
                     MessageEntity(
                         content = response.toString(),
                         author = config.name,
                         role = MessageEntity.Roles.assistant,
                         chatId = config.name,
-                        debugInfo = null,
+                        debugInfo = buildString {
+                            appendLine("promptToken = ${debugInfo.promptToken}")
+                            appendLine("completionToken = ${debugInfo.completionToken}")
+                            appendLine("totalToken = ${debugInfo.totalToken}")
+                        },
                     )
                 )
             }

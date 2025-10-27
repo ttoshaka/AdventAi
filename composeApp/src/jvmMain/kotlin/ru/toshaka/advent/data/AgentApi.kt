@@ -74,6 +74,7 @@ class AgentApi(
             model = agentConfig.model,
             responseFormat = ChatRequest.ResponseFormat("json_object"),
             temperature = agentConfig.temperature,
+            //maxTokens = 20
         )
 
         return client.post(agentConfig.baseUrl) {

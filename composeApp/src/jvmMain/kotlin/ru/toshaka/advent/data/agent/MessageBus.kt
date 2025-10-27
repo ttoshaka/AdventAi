@@ -5,12 +5,12 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 
 class MessageBus {
 
-    val flow = MutableSharedFlow<AiResponse>(
+    val flow = MutableSharedFlow<Pair<AiResponse, DebugInfo>>(
         replay = 1,
         onBufferOverflow = BufferOverflow.DROP_OLDEST,
     )
 
-    fun send(response: AiResponse) {
-        flow.tryEmit(response)
+    fun send(response: AiResponse, debugInfo: DebugInfo) {
+        flow.tryEmit(response to debugInfo)
     }
 }
