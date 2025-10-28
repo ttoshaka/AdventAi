@@ -2,12 +2,28 @@ package ru.toshaka.advent.ui
 
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
+import kotlinx.coroutines.*
 import ru.toshaka.advent.data.agent.AgentsManager
 import ru.toshaka.advent.data.agent.AiResponse
 import ru.toshaka.advent.data.agent.DeepSeekChatAgent
-
+import ru.toshaka.advent.mcp.Client
+import ru.toshaka.advent.mcp.Server
 
 fun main() = application {
+    val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    scope.launch {
+        val server = Server()
+        server.launch()
+    }
+    scope.launch {
+        delay(5_000)
+        val client = Client()
+        val tools = client.connect()
+        println("Tools = $tools")
+        val response = client.call(1, 2)
+        println("Call = $response")
+    }
+
     val agentsManagers = AgentsManager()
     val flow1 = agentsManagers.addAgent(
         DeepSeekChatAgent {
