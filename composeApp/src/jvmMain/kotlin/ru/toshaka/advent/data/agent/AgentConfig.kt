@@ -6,6 +6,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
 import ru.toshaka.advent.data.AgentApi
 import java.util.*
 import kotlin.reflect.KClass
@@ -36,6 +37,8 @@ class AgentConfig<R : AiResponse> {
     var history: () -> List<Pair<String, String>> = { emptyList() }
 
     lateinit var onAiResponse: (R, AgentReponseDebugInfo) -> Unit
+
+    var tools: (String, Map<String, Any?>) -> String = { q, w -> "" }
 }
 
 class Agent<R : AiResponse>(private val config: AgentConfig<R>) {
@@ -46,8 +49,8 @@ class Agent<R : AiResponse>(private val config: AgentConfig<R>) {
     val isReceiveUserMessage = config.isReceiveUserMessage
     var receiveType: KClass<out AiResponse>? = config.inputFormats
 
-    operator fun invoke(message: String) = scope.launch {
-        val response = api(message, config.history())
+    operator fun invoke(message: String, force: Boolean = false) = scope.launch {
+        val response = api(message, config.history(), force)
         val mes = Json.decodeFromString<AiResponse>(response.choices.first().message.content) as R
         val usage = response.usage!!
         config.onAiResponse(
@@ -58,6 +61,14 @@ class Agent<R : AiResponse>(private val config: AgentConfig<R>) {
                 agentName = name,
             )
         )
+        if (mes is AiResponse.ToolCall) {
+            val toolResponse = config.tools(mes.name, Json.parseToJsonElement(mes.args).jsonObject)
+            send("Результат работы инструмента - $toolResponse")
+        }
+    }
+
+    private fun send(message: String) {
+        invoke(message, true)
     }
 }
 

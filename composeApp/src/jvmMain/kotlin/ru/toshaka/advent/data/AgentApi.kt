@@ -45,7 +45,7 @@ class AgentApi(
         }
     }
 
-    suspend operator fun invoke(message: String, history: List<Pair<String, String>>): ChatResponse {
+    suspend operator fun invoke(message: String, history: List<Pair<String, String>>,force: Boolean = false): ChatResponse {
         val requestBody = ChatRequest(
             messages = buildList {
                 add(
@@ -62,7 +62,7 @@ class AgentApi(
                         )
                     )
                 }
-                if (history.isEmpty()) {
+                if (history.isEmpty()|| force) {
                     add(
                         ChatRequest.ChatMessage(
                             content = message,

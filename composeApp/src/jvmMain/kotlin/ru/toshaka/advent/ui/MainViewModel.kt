@@ -1,18 +1,20 @@
 package ru.toshaka.advent.ui
 
 import androidx.compose.ui.graphics.Color
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
+import io.modelcontextprotocol.kotlin.sdk.Tool
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
 import ru.toshaka.advent.data.agent.AgentConfig
 import ru.toshaka.advent.data.agent.AgentsManager
 import ru.toshaka.advent.data.agent.AiResponse
 import ru.toshaka.advent.data.agent.DeepSeekChatAgent
+import ru.toshaka.advent.mcp.Client
+import ru.toshaka.advent.mcp.ObsidianClient
+import ru.toshaka.advent.mcp.ObsidianServer
+import ru.toshaka.advent.mcp.Server
 
 class MainViewModel {
 
@@ -23,22 +25,35 @@ class MainViewModel {
     val state = _state.asStateFlow()
 
     init {
-        createAgent(
-            DeepSeekChatAgent {
-                name = "Default agent 1"
-                systemPrompt = "Ты AI-ассистент."
-                outputFormats = listOf(AiResponse.TextResponse::class)
-                isReceiveUserMessage = true
-            }
-        )
-        createAgent(
-            DeepSeekChatAgent {
-                name = "Default agent 2"
-                systemPrompt = "Ты весёлый AI-ассистент."
-                outputFormats = listOf(AiResponse.TextResponse::class)
-                isReceiveUserMessage = true
-            }
-        )
+        viewModelScope.launch {
+            val server = ObsidianServer()
+            server.launch()
+        }
+        viewModelScope.launch {
+            delay(5_000)
+            val client = ObsidianClient()
+            val tools = client.connect()
+            createAgent(
+                DeepSeekChatAgent {
+                    name = "Default agent 1"
+                    systemPrompt = """
+                        Ты AI-ассистент.
+                        В твоем распоряжение есть набор инструментов. В случае если один из инструментов подходит для выполнения запроса пользователя, то ты должен воспользоваться им, ответив соответствующим форматом сообщения.
+                        В ответ от инструмента ты получишь результат работы, который ты должен передать пользователю.
+                        Список инструментов:
+                        ${tools.toPrompt()}
+                    """.trimIndent()
+                    outputFormats = listOf(
+                        AiResponse.TextResponse::class,
+                        AiResponse.ToolCall::class
+                    )
+                    isReceiveUserMessage = true
+                    this.tools = { q, w ->
+                        runBlocking { client.call(q, w) }
+                    }
+                }
+            )
+        }
     }
 
     /**
@@ -106,4 +121,14 @@ class MainViewModel {
             )
         }
     }
+
+    private fun List<Tool>.toPrompt(): String =
+        buildString {
+            this@toPrompt.forEach { tool ->
+                appendLine("Название инструмента - ${tool.name}")
+                appendLine("Формат входных данных - ${tool.inputSchema}")
+                appendLine()
+                appendLine()
+            }
+        }
 }
