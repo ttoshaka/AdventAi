@@ -1,43 +1,18 @@
 package ru.toshaka.advent.ui
 
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
-import ru.toshaka.advent.data.agent.AgentsManager
-import ru.toshaka.advent.data.agent.AiResponse
-import ru.toshaka.advent.data.agent.DeepSeekChatAgent
 
 
 fun main() = application {
-    val agentsManagers = AgentsManager()
-    val flow1 = agentsManagers.addAgent(
-        DeepSeekChatAgent {
-            name = "Optimizer agent"
-            systemPrompt = """
-                Ты AI-ассистент. Твоя задача сжать переданный тебе текст, оставив только необходимые для корректного ответа данные.
-                """
-            outputFormats = listOf(AiResponse.TextResponse::class)
-            isReceiveUserMessage = true
-        }
-    )
-    val flow2 = agentsManagers.addAgent(
-        DeepSeekChatAgent {
-            name = "Default agent"
-            systemPrompt = """
-                Ты AI-ассистент.
-                """
-            outputFormats = listOf(AiResponse.TextResponse::class)
-            inputFormats = AiResponse.TextResponse::class
-        }
-    )
-
+    val viewModel = MainViewModel()
+    val state by viewModel.state.collectAsState()
     Window(
         onCloseRequest = ::exitApplication,
         title = "AdventAi_3",
     ) {
-        App(
-            messageFlow = listOf(flow1, flow2),
-            onSendMessageClick = agentsManagers::onUserMessage,
-            onClearClick = agentsManagers::clear
-        )
+        App(state)
     }
 }
