@@ -11,10 +11,10 @@ import ru.toshaka.advent.data.agent.AgentConfig
 import ru.toshaka.advent.data.agent.AgentsManager
 import ru.toshaka.advent.data.agent.AiResponse
 import ru.toshaka.advent.data.agent.DeepSeekChatAgent
-import ru.toshaka.advent.mcp.Client
-import ru.toshaka.advent.mcp.ObsidianClient
-import ru.toshaka.advent.mcp.ObsidianServer
-import ru.toshaka.advent.mcp.Server
+import ru.toshaka.advent.mcp.obsidian.ObsidianClient
+import ru.toshaka.advent.mcp.obsidian.ObsidianServer
+import ru.toshaka.advent.mcp.page.PageClient
+import ru.toshaka.advent.mcp.page.PageServer
 
 class MainViewModel {
 
@@ -26,13 +26,16 @@ class MainViewModel {
 
     init {
         viewModelScope.launch {
-            val server = ObsidianServer()
-            server.launch()
+            PageServer().launch()
         }
         viewModelScope.launch {
-            delay(5_000)
-            val client = ObsidianClient()
-            val tools = client.connect()
+            ObsidianServer().launch()
+        }
+        viewModelScope.launch {
+            delay(1_000)
+            val pageClient = PageClient()
+            val obsidianClient = ObsidianClient()
+            val tools = pageClient.connect() + obsidianClient.connect()
             createAgent(
                 DeepSeekChatAgent {
                     name = "Default agent 1"
@@ -48,11 +51,25 @@ class MainViewModel {
                         AiResponse.ToolCall::class
                     )
                     isReceiveUserMessage = true
-                    this.tools = { q, w ->
-                        runBlocking { client.call(q, w) }
+                    this.tools = { name, args ->
+                        runBlocking {
+                            if (name == "Page") {
+                                pageClient.call(name, args)
+                            } else {
+                                obsidianClient.call(name, args)
+                            }
+                        }
                     }
                 }
             )
+
+            viewModelScope.launch {
+                while (true) {
+                    agentsManager.onUserMessage("Считай содерживое заметки mcpTool. Для полученного списка сайтов загрузи содержимо и расскажи о чем они")
+                    delay(1 * 60 * 1000)
+                }
+            }
+
         }
     }
 

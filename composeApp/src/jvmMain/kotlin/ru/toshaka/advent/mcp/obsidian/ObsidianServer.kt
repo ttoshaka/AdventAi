@@ -1,4 +1,4 @@
-package ru.toshaka.advent.mcp
+package ru.toshaka.advent.mcp.obsidian
 
 import io.ktor.server.cio.*
 import io.ktor.server.engine.*

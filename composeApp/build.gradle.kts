@@ -45,7 +45,7 @@ kotlin {
             implementation("io.modelcontextprotocol:kotlin-sdk:0.7.4")
             implementation("ch.qos.logback:logback-classic:1.4.14")
             implementation("io.ktor:ktor-server-cio:3.3.1")
-
+            implementation("org.jsoup:jsoup:1.21.2")
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

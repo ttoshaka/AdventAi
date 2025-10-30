@@ -12,6 +12,7 @@ data class MessageEntity(
     val author: String,
     val role: Roles,
     val debugInfo: String?,
+    val history: Boolean,
 ) {
     enum class Roles {
         user, assistant

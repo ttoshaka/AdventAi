@@ -9,6 +9,10 @@ import ru.toshaka.advent.data.db.MessageEntity
 import ru.toshaka.advent.data.db.MessagesRepository
 import ru.toshaka.advent.ui.ChatItem
 import java.io.File
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.*
 
 class AgentsManager {
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
@@ -29,6 +33,7 @@ class AgentsManager {
                             role = MessageEntity.Roles.user,
                             chatId = agent.name,
                             debugInfo = null,
+                            history = response !is AiResponse.TextResponse
                         )
                         saveMessage(message)
                         agent.invoke(response.toString())
@@ -58,9 +63,14 @@ class AgentsManager {
                             appendLine("promptToken = ${debugInfo.promptToken}")
                             appendLine("completionToken = ${debugInfo.completionToken}")
                             appendLine("totalToken = ${debugInfo.totalToken}")
+                            appendLine("Time = ${System.currentTimeMillis().toReadableDateTime()}")
                         },
+                        history = response !is AiResponse.TextResponse
                     )
                 )
+                if (response is AiResponse.TextResponse) {
+                    scope.launch { messageRepository.clearHistory() }
+                }
             }
             history = messageHistory(config.name, messageRepository)
         }).apply(agents::add)
@@ -77,6 +87,7 @@ class AgentsManager {
                     role = MessageEntity.Roles.user,
                     chatId = agent.name,
                     debugInfo = null,
+                    history = true
                 )
             )
             agent.invoke(text)
@@ -89,6 +100,13 @@ class AgentsManager {
         }
     }
 
+    fun Long.toReadableDateTime(
+        zone: ZoneId = ZoneId.systemDefault(),
+        pattern: String = "dd.MM.yyyy HH:mm:ss"
+    ): String {
+        val formatter = DateTimeFormatter.ofPattern(pattern).withLocale(Locale.getDefault()).withZone(zone)
+        return formatter.format(Instant.ofEpochMilli(this))
+    }
 
     private fun getRoomDatabase(): AppDatabase =
         Room.databaseBuilder<AppDatabase>(File(System.getProperty("java.io.tmpdir"), "my_room.db").absolutePath)

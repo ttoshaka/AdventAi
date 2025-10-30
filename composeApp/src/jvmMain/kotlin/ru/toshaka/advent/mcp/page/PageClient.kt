@@ -1,4 +1,4 @@
-package ru.toshaka.advent.mcp
+package ru.toshaka.advent.mcp.page
 
 import io.ktor.client.*
 import io.ktor.client.plugins.sse.*
@@ -9,9 +9,9 @@ import io.modelcontextprotocol.kotlin.sdk.client.Client
 import io.modelcontextprotocol.kotlin.sdk.client.ClientOptions
 import io.modelcontextprotocol.kotlin.sdk.client.SseClientTransport
 
-class ObsidianClient {
+class PageClient {
     private val client = Client(
-        clientInfo = Implementation("obsidian_client", "0.0.1"),
+        clientInfo = Implementation("page_client", "0.0.1"),
         options = ClientOptions()
     )
     private val httpClient = HttpClient {
@@ -19,7 +19,7 @@ class ObsidianClient {
     }
     private val transport = SseClientTransport(
         client = httpClient,
-        urlString = "http://localhost:3002"
+        urlString = "http://localhost:3003"
     )
 
     suspend fun connect(): List<Tool> {

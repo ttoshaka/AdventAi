@@ -19,4 +19,7 @@ interface MessageDao {
 
     @Query("DELETE FROM MessageEntity")
     suspend fun clearAllMessages()
+
+    @Query("DELETE FROM MessageEntity WHERE history = 1")
+    suspend fun clearHistory()
 }

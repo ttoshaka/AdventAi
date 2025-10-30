@@ -18,10 +18,14 @@ class MessagesRepository(
         }
 
     suspend fun getAll(chatId: String): List<ChatItem> =
-        messageDao.getAll().filter { it.chatId == chatId }.map { it.toItem() }
+        messageDao.getAll().filter { it.chatId == chatId && it.history }.map { it.toItem() }
 
     suspend fun clear() {
         messageDao.clearAllMessages()
+    }
+
+    suspend fun clearHistory() {
+        messageDao.clearHistory()
     }
 
     private fun MessageEntity.toItem(): ChatItem =
