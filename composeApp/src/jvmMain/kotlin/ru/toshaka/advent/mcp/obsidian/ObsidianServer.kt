@@ -7,7 +7,10 @@ import io.modelcontextprotocol.kotlin.sdk.server.RegisteredTool
 import io.modelcontextprotocol.kotlin.sdk.server.Server
 import io.modelcontextprotocol.kotlin.sdk.server.ServerOptions
 import io.modelcontextprotocol.kotlin.sdk.server.mcp
-import kotlinx.serialization.json.*
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.putJsonObject
 import java.io.File
 
 class ObsidianServer {
@@ -33,7 +36,7 @@ class ObsidianServer {
     }
 
     private fun createTools(): List<RegisteredTool> {
-        val factTool = RegisteredTool(
+        val readerTool = RegisteredTool(
             Tool(
                 title = null,
                 outputSchema = null,
@@ -56,6 +59,34 @@ class ObsidianServer {
             val text = file.readText()
             CallToolResult(content = listOf(TextContent(text)))
         }
-        return listOf(factTool)
+        val writerTool = RegisteredTool(
+            Tool(
+                title = null,
+                outputSchema = null,
+                annotations = null,
+                name = "Writer",
+                description = "Создает файл с указанным названием и переданным содержимым",
+                inputSchema = Tool.Input(
+                    properties = buildJsonObject {
+                        putJsonObject("fileName") {
+                            put("type", JsonPrimitive("string"))
+                            put("description", JsonPrimitive("Название файла"))
+                        }
+                        putJsonObject("content") {
+                            put("type", JsonPrimitive("string"))
+                            put("description", JsonPrimitive("Контент для записи в файл"))
+                        }
+                    },
+                    required = listOf("fileName, content")
+                )
+            )
+        ) { callToolRequest ->
+            val fileName = callToolRequest.arguments["fileName"]!!.jsonPrimitive.content
+            val content = callToolRequest.arguments["content"]!!.jsonPrimitive.content
+            val file = File("C:\\Users\\Anton\\Documents\\AdventVault\\$fileName.md")
+            val text = file.writeText(content)
+            CallToolResult(content = listOf(TextContent("Файл с именем $fileName создана")))
+        }
+        return listOf(readerTool, writerTool)
     }
 }

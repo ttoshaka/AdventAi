@@ -33,7 +33,6 @@ class AgentsManager {
                             role = MessageEntity.Roles.user,
                             chatId = agent.name,
                             debugInfo = null,
-                            history = response !is AiResponse.TextResponse
                         )
                         saveMessage(message)
                         agent.invoke(response.toString())
@@ -65,12 +64,8 @@ class AgentsManager {
                             appendLine("totalToken = ${debugInfo.totalToken}")
                             appendLine("Time = ${System.currentTimeMillis().toReadableDateTime()}")
                         },
-                        history = response !is AiResponse.TextResponse
                     )
                 )
-                if (response is AiResponse.TextResponse) {
-                    scope.launch { messageRepository.clearHistory() }
-                }
             }
             history = messageHistory(config.name, messageRepository)
         }).apply(agents::add)
@@ -87,7 +82,6 @@ class AgentsManager {
                     role = MessageEntity.Roles.user,
                     chatId = agent.name,
                     debugInfo = null,
-                    history = true
                 )
             )
             agent.invoke(text)

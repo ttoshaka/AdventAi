@@ -62,14 +62,6 @@ class MainViewModel {
                     }
                 }
             )
-
-            viewModelScope.launch {
-                while (true) {
-                    agentsManager.onUserMessage("Считай содерживое заметки mcpTool. Для полученного списка сайтов загрузи содержимо и расскажи о чем они")
-                    delay(1 * 60 * 1000)
-                }
-            }
-
         }
     }
 
