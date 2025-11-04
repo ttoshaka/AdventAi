@@ -11,6 +11,8 @@ import ru.toshaka.advent.data.agent.AgentConfig
 import ru.toshaka.advent.data.agent.AgentsManager
 import ru.toshaka.advent.data.agent.AiResponse
 import ru.toshaka.advent.data.agent.DeepSeekChatAgent
+import ru.toshaka.advent.mcp.code.CodeClient
+import ru.toshaka.advent.mcp.code.CodeServer
 import ru.toshaka.advent.mcp.console.ConsoleClient
 import ru.toshaka.advent.mcp.console.ConsoleServer
 import ru.toshaka.advent.mcp.obsidian.ObsidianClient
@@ -37,11 +39,15 @@ class MainViewModel {
             ConsoleServer().launch()
         }
         viewModelScope.launch {
+            CodeServer().launch()
+        }
+        viewModelScope.launch {
             delay(1_000)
             val pageClient = PageClient()
             val obsidianClient = ObsidianClient()
             val consoleClient = ConsoleClient()
-            val tools = pageClient.connect() + obsidianClient.connect() + consoleClient.connect()
+            val codeClient = CodeClient()
+            val tools = pageClient.connect() + obsidianClient.connect() + codeClient.connect()
             createAgent(
                 DeepSeekChatAgent {
                     name = "Default agent 1"
@@ -63,8 +69,10 @@ class MainViewModel {
                                 pageClient.call(name, args)
                             } else if (name == "Reader") {
                                 obsidianClient.call(name, args)
-                            } else {
+                            } else if (name == "ExecuteCommand") {
                                 consoleClient.call(name, args)
+                            } else {
+                                codeClient.call(name, args)
                             }
                         }
                     }
