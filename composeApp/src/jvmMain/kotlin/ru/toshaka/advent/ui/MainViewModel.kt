@@ -28,56 +28,37 @@ class MainViewModel {
     private val _state = MutableStateFlow(MainScreenState.Empty)
     val state = _state.asStateFlow()
 
+    private val lazyAgent = DeepSeekChatAgent {
+        name = "Ленивый агент"
+        systemPrompt = """
+                        Ты очень ленивый AI-ассистент. Решай поставленные задачи как можно более простым методом.
+                        В результате своей работы отдавай просто ответ, не нужно расписывать ход решения.
+                    """.trimIndent()
+        outputFormats = listOf(AiResponse.TextResponse::class)
+        isReceiveUserMessage = true
+    }
+    private val smartAgent = DeepSeekChatAgent {
+        name = "Умный агент"
+        systemPrompt = """
+                        Ты самый умный AI-ассистент. Решай поставленные задачи как можно более умным и сложным способом.
+                    """.trimIndent()
+        outputFormats = listOf(AiResponse.TextResponse::class)
+        isReceiveUserMessage = true
+    }
+    private val stepAgent = DeepSeekChatAgent {
+        name = "Пошаговый агент"
+        systemPrompt = """
+                        Ты AI-ассистент. Решай поставленные задачи пошагово, используя технику chain-of-thought.
+                    """.trimIndent()
+        outputFormats = listOf(AiResponse.TextResponse::class)
+        isReceiveUserMessage = true
+    }
+
     init {
         viewModelScope.launch {
-            PageServer().launch()
-        }
-        viewModelScope.launch {
-            ObsidianServer().launch()
-        }
-        viewModelScope.launch {
-            ConsoleServer().launch()
-        }
-        viewModelScope.launch {
-            CodeServer().launch()
-        }
-        viewModelScope.launch {
-            delay(1_000)
-            val pageClient = PageClient()
-            val obsidianClient = ObsidianClient()
-            val consoleClient = ConsoleClient()
-            val codeClient = CodeClient()
-            val tools = pageClient.connect() + obsidianClient.connect() + codeClient.connect()
-            createAgent(
-                DeepSeekChatAgent {
-                    name = "Default agent 1"
-                    systemPrompt = """
-                        Ты AI-ассистент.
-                        В твоем распоряжение есть набор инструментов. В случае если один из инструментов подходит для выполнения запроса пользователя, то ты должен воспользоваться им, ответив соответствующим форматом сообщения.
-                        В ответ от инструмента ты получишь результат работы, который ты должен передать пользователю.
-                        Список инструментов:
-                        ${tools.toPrompt()}
-                    """.trimIndent()
-                    outputFormats = listOf(
-                        AiResponse.TextResponse::class,
-                        AiResponse.ToolCall::class
-                    )
-                    isReceiveUserMessage = true
-                    this.tools = { name, args ->
-                        runBlocking {
-                            if (name == "Page") {
-                                pageClient.call(name, args)
-                            } else if (name == "Reader") {
-                                obsidianClient.call(name, args)
-                            } else if (name == "ExecuteCommand") {
-                                consoleClient.call(name, args)
-                            } else {
-                                codeClient.call(name, args)
-                            }
-                        }
-                    }
-                }
-            )
+            createAgent(lazyAgent)
+            createAgent(smartAgent)
+            createAgent(stepAgent)
         }
     }
 
