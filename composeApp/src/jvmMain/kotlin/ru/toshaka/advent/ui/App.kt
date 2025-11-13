@@ -6,9 +6,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -24,27 +22,134 @@ import androidx.compose.ui.unit.sp
 
 @Composable
 fun App(state: MainScreenState) {
+    var selectedChatIndex by remember { mutableStateOf(0) }
+    var showAddAgentScreen by remember { mutableStateOf(false) }
+    var showCreateChatScreen by remember { mutableStateOf(false) }
+
     MaterialTheme {
-        Row(
+        Column(
             modifier = Modifier
+                .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
                 .safeContentPadding()
-                .fillMaxSize()
-                .padding(8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                .padding(8.dp)
         ) {
-            state.chats.forEach { chat ->
-                ChatWindow(
-                    chat = chat.value,
-                    modifier = Modifier.weight(1f)
-                )
+
+            // Экран добавления агента
+            if (showAddAgentScreen) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color(0xAA000000))
+                        .clickable(enabled = false) {}
+                ) {
+                    AddAgentScreen(
+                        onSave = { agentData ->
+                            state.onSaveAgent(agentData)
+                            showAddAgentScreen = false
+                        },
+                        onCancel = { showAddAgentScreen = false }
+                    )
+                }
             }
+
+            // Экран создания нового чата
+            if (showCreateChatScreen) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color(0xAA000000))
+                        .clickable(enabled = false) {}
+                ) {
+                    CreateChatScreen(
+                        availableAgents = state.availableAgents,
+                        onSave = { selectedAgents ->
+                            state.onSaveChat(selectedAgents)
+                            showCreateChatScreen = false
+                        },
+                        onCancel = { showCreateChatScreen = false }
+                    )
+                }
+            }
+
+            if (state.chats.size > 0) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    ScrollableTabRow(
+                        selectedTabIndex = selectedChatIndex,
+                        edgePadding = 0.dp,
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        state.chats.forEachIndexed { index, chat ->
+                            Tab(
+                                selected = selectedChatIndex == index,
+                                onClick = { selectedChatIndex = index },
+                                text = { Text(chat.name) }
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    // Кнопка добавления агента
+                    Button(onClick = { showAddAgentScreen = true }) {
+                        Text("+Agent")
+                    }
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    // Кнопка создания нового чата
+                    Button(onClick = { showCreateChatScreen = true }) {
+                        Text("+Chat")
+                    }
+                }
+            } else {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Кнопка добавления агента
+                    Button(onClick = { showAddAgentScreen = true }) {
+                        Text("+Agent")
+                    }
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    // Кнопка создания нового чата
+                    Button(onClick = { showCreateChatScreen = true }) {
+                        Text("+Chat")
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Отображаем только выбранный чат
+            if (state.chats.isNotEmpty()) {
+                ChatWindow(
+                    chat = state.chats[selectedChatIndex],
+                    modifier = Modifier.fillMaxSize()
+                )
+            } else {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        "Нет чатов. Создайте нового агента или чат.",
+                        color = Color.Gray
+                    )
+                }
+            }
+
+
         }
     }
 }
 
 @Composable
-private fun RowScope.ChatWindow(
+private fun ChatWindow(
     chat: MainScreenState.Chat,
     modifier: Modifier = Modifier
 ) {

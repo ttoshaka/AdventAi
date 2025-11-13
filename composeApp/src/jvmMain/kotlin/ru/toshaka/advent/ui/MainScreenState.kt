@@ -3,7 +3,10 @@ package ru.toshaka.advent.ui
 import androidx.compose.ui.graphics.Color
 
 data class MainScreenState(
-    val chats: Map<String, Chat>
+    val chats: List<Chat>,
+    val availableAgents: List<Agent>,
+    val onSaveAgent: (AgentData) -> Unit,
+    val onSaveChat: (agents: List<Long>) -> Unit,
 ) {
     data class Chat(
         val name: String,
@@ -24,7 +27,15 @@ data class MainScreenState(
         }
     }
 
+    data class Agent(
+        val name: String,
+        val systemPrompt: String,
+        val id: Long,
+        val temperature: Float,
+        val maxTokens: Int,
+    )
+
     companion object {
-        val Empty = MainScreenState(mutableMapOf())
+        val Empty = MainScreenState(emptyList(), emptyList(), { _ -> }, {})
     }
 }

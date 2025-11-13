@@ -13,6 +13,7 @@ import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
 import ru.toshaka.advent.data.agent.AgentConfig
+import ru.toshaka.advent.data.db.message.MessageEntity
 import ru.toshaka.advent.data.model.ChatRequest
 import ru.toshaka.advent.data.model.ChatResponse
 
@@ -45,7 +46,41 @@ class AgentApi(
         }
     }
 
-    suspend operator fun invoke(message: String, history: List<Pair<String, String>>,force: Boolean = false): ChatResponse {
+    suspend fun send(system: String, maxTokens: Int, dialog: List<MessageEntity>): ChatResponse {
+        val requestBody = ChatRequest(
+            messages = buildList {
+                add(
+                    ChatRequest.ChatMessage(
+                        content = system,
+                        role = "system"
+                    )
+                )
+                dialog.forEach {
+                    add(
+                        ChatRequest.ChatMessage(
+                            content = it.content,
+                            role = if (it.owner == 0L) "user" else "assistant"
+                        )
+                    )
+                }
+            },
+            model = agentConfig.model,
+            responseFormat = ChatRequest.ResponseFormat("text"),
+            temperature = agentConfig.temperature,
+            maxTokens = maxTokens,
+        )
+
+        return client.post(agentConfig.baseUrl) {
+            contentType(ContentType.Application.Json)
+            setBody(requestBody)
+        }.body()
+    }
+
+    suspend operator fun invoke(
+        message: String,
+        history: List<Pair<String, String>>,
+        force: Boolean = false
+    ): ChatResponse {
         val requestBody = ChatRequest(
             messages = buildList {
                 add(
@@ -62,7 +97,7 @@ class AgentApi(
                         )
                     )
                 }
-                if (history.isEmpty()|| force) {
+                if (history.isEmpty() || force) {
                     add(
                         ChatRequest.ChatMessage(
                             content = message,

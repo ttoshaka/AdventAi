@@ -1,4 +1,4 @@
-package ru.toshaka.advent.data.db
+package ru.toshaka.advent.data.db.message
 
 import androidx.room.Dao
 import androidx.room.Insert
@@ -20,6 +20,6 @@ interface MessageDao {
     @Query("DELETE FROM MessageEntity")
     suspend fun clearAllMessages()
 
-    @Query("DELETE FROM MessageEntity WHERE history = 1")
+    @Query("DELETE FROM MessageEntity")
     suspend fun clearHistory()
 }
