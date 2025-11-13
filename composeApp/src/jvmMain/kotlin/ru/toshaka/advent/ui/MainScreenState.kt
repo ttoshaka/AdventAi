@@ -6,13 +6,15 @@ data class MainScreenState(
     val chats: List<Chat>,
     val availableAgents: List<Agent>,
     val onSaveAgent: (AgentData) -> Unit,
-    val onSaveChat: (agents: List<Long>) -> Unit,
+    val onSaveChat: (agents: List<Long>, String) -> Unit,
 ) {
     data class Chat(
+        val id: Long,
         val name: String,
         val messages: List<Message>,
         val onSendClick: (String) -> Unit,
         val onClearClick: () -> Unit,
+        val onSummarizeClick: (Long) -> Unit,
     ) {
         data class Message(
             val author: String,
@@ -36,6 +38,13 @@ data class MainScreenState(
     )
 
     companion object {
-        val Empty = MainScreenState(emptyList(), emptyList(), { _ -> }, {})
+        val Empty = MainScreenState(emptyList(), emptyList(), { _ -> }, { _, _ -> })
     }
 }
+
+data class AgentData(
+    val name: String,
+    val systemPrompt: String,
+    val temperature: Float,
+    val maxTokens: Int
+)

@@ -6,8 +6,8 @@ class ChatRepository(
     private val chatDao: ChatDao,
 ) {
 
-    suspend fun save(chat: ChatEntity) {
-        chatDao.insert(chat)
+    suspend fun save(chat: ChatEntity): Long {
+        return chatDao.insert(chat)
     }
 
     fun getAllAsFlow(): Flow<List<ChatEntity>> =

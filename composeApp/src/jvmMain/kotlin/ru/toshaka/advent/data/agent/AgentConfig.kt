@@ -8,6 +8,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import ru.toshaka.advent.data.AgentApi
+import ru.toshaka.advent.data.model.ChatResponse
 import java.util.*
 import kotlin.reflect.KClass
 import kotlin.reflect.full.findAnnotation
@@ -26,7 +27,7 @@ class AgentConfig<R : AiResponse> {
     var key: String = ""
 
     var systemPrompt: String = ""
-        get() = field.appendPromptDescription(outputFormats)
+        get() = field//.appendPromptDescription(outputFormats)
 
     var inputFormats: KClass<out AiResponse>? = null
 
@@ -65,6 +66,11 @@ class Agent<R : AiResponse>(private val config: AgentConfig<R>) {
             val toolResponse = config.tools(mes.name, Json.parseToJsonElement(mes.args).jsonObject)
             send("Результат работы инструмента - $toolResponse")
         }
+    }
+
+    suspend operator fun invoke(messages: List<String>, force: Boolean = false): ChatResponse {
+        val response = api(messages.toString(), emptyList(), force)
+        return response
     }
 
     private fun send(message: String) {

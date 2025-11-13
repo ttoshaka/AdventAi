@@ -8,6 +8,7 @@ import androidx.room.TypeConverter
 data class ChatEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val agents: List<Long>,
+    val name: String,
 )
 
 class Converters {

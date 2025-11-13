@@ -107,7 +107,7 @@ class AgentApi(
                 }
             },
             model = agentConfig.model,
-            responseFormat = ChatRequest.ResponseFormat("json_object"),
+            responseFormat = ChatRequest.ResponseFormat("text"),
             temperature = agentConfig.temperature,
         )
 

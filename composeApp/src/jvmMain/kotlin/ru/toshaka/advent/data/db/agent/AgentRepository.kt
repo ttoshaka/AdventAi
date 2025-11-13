@@ -23,4 +23,8 @@ class AgentRepository(
     suspend fun clearHistory() {
         agentDao.clearHistory()
     }
+
+    suspend fun update(item: AgentEntity) {
+        agentDao.update(item)
+    }
 }

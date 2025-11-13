@@ -11,6 +11,7 @@ data class MessageEntity(
     val content: String,
     val debugInfo: String?,
     val timestamp: Long,
+    val history: Boolean,
 )
 
 val MessageEntity.isUser get() = owner == 0L

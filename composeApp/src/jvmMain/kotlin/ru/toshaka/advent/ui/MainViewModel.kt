@@ -8,6 +8,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.actor
 import kotlinx.coroutines.flow.*
 import ru.toshaka.advent.data.AgentApi
+import ru.toshaka.advent.data.agent.Agent
 import ru.toshaka.advent.data.agent.DeepSeekChatAgent
 import ru.toshaka.advent.data.db.AppDatabase
 import ru.toshaka.advent.data.db.agent.AgentEntity
@@ -31,6 +32,20 @@ class MainViewModel {
 
     private val _state = MutableStateFlow(MainScreenState.Empty)
     val state: StateFlow<MainScreenState> = _state.asStateFlow()
+
+    private val summarizerAgent = Agent(DeepSeekChatAgent {
+        systemPrompt = """
+            Ты — система сжатия информации.
+            Тебе передан полный диалог между пользователем и ИИ-ассистентом.
+            Твоя задача — создать краткое, связное и информативное резюме диалога, сохранив ключевые вопросы пользователя, важные ответы ассистента и итоговые выводы.
+            Игнорируй приветствия, уточнения и повторяющиеся фразы.
+            Если обсуждалось несколько тем — отрази их все кратко, но раздельно.
+            Формат вывода:
+            Краткое описание цели диалога
+            Основные вопросы и ответы (по пунктам)
+            Итог / решение / следующий шаг (если есть)
+        """.trimIndent()
+    })
 
     /** Последовательное выполнение команд */
     @OptIn(ObsoleteCoroutinesApi::class)
@@ -62,18 +77,14 @@ class MainViewModel {
         observeChatsAndMessages()
     }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     private fun observeChatsAndMessages() = scope.launch {
-        val agents = agentRepo.getAll()
         combine(
             chatRepo.getAllAsFlow(),
             messageRepo.getAllAsFlow(),
             agentRepo.getAllAsFlow()
         ) { chats, messages, agents ->
             _state.value = MainScreenState(
-                chats = chats.map { chat ->
-                    buildChatState(chat, messages.filter { it.chatId == chat.id }, agents)
-                },
+                chats = chats.map { chat -> buildChatState(chat, messages, agents) },
                 availableAgents = agents.map { agent ->
                     MainScreenState.Agent(
                         name = agent.name,
@@ -84,34 +95,39 @@ class MainViewModel {
                     )
                 },
                 onSaveAgent = ::onSaveAgent,
-                onSaveChat = ::onSaveChat
+                onSaveChat = ::onSaveChat,
             )
         }.collect()
-        chatRepo.getAllAsFlow()
-            .flatMapLatest { chats ->
-                combine(chats.map { chat ->
-                    messageRepo.getAllAsFlow(chat.id)
-                        .map { messages -> chat to messages }
-                }) { it.toList() }
+    }
+
+    private fun onSummarizeClick(chatId: Long) {
+        commandExecutor.trySend {
+            val messages = messageRepo.getAll(chatId).map {
+                "${if (it.isUser) "user" else "assistant"} - ${it.content}"
             }
-            .collect { chatWithMessages ->
-                _state.value = MainScreenState(
-                    chatWithMessages.map { (chat, messages) ->
-                        buildChatState(chat, messages, agents)
-                    },
-                    availableAgents = agents.map { agent ->
-                        MainScreenState.Agent(
-                            name = agent.name,
-                            systemPrompt = agent.systemPrompt,
-                            id = agent.id,
-                            temperature = agent.temperature,
-                            maxTokens = agent.maxTokens,
-                        )
-                    },
-                    onSaveAgent = ::onSaveAgent,
-                    onSaveChat = ::onSaveChat
+            val response = summarizerAgent.invoke(messages, false)
+            messageRepo.clear()
+            val chat = chatRepo.getAll().find { it.id == chatId }!!
+            val agents = agentRepo.getAll().filter { chat.agents.contains(it.id) }
+            agents.forEach { agent ->
+                val system = """
+                            ${agent.systemPrompt}
+                            Сжатая информация о предыдущем разговоре:
+                            ${response.choices.first().message.content}
+                        """.trimIndent()
+                messageRepo.save(
+                    MessageEntity(
+                        chatId = chatId,
+                        owner = agent.id,
+                        content = system,
+                        debugInfo = "System prompt",
+                        timestamp = System.currentTimeMillis(),
+                        history = false,
+                    )
                 )
+                agentRepo.update(agent.copy(systemPrompt = system))
             }
+        }
     }
 
     private fun onSaveAgent(agentData: AgentData) {
@@ -127,13 +143,23 @@ class MainViewModel {
         }
     }
 
-    private fun onSaveChat(agents: List<Long>) {
+    private fun onSaveChat(agents: List<Long>, name: String) {
         scope.launch {
-            chatRepo.save(
-                ChatEntity(
-                    agents = agents
+            val chatId = chatRepo.save(ChatEntity(agents = agents, name = name))
+            val chat = chatRepo.getAll().find { it.id == chatId }!!
+            val agents = agentRepo.getAll().filter { chat.agents.contains(it.id) }
+            agents.forEach { agent ->
+                messageRepo.save(
+                    MessageEntity(
+                        chatId = chatId,
+                        owner = agent.id,
+                        content = agent.systemPrompt,
+                        debugInfo = "System prompt",
+                        timestamp = System.currentTimeMillis(),
+                        history = false,
+                    )
                 )
-            )
+            }
         }
     }
 
@@ -143,8 +169,9 @@ class MainViewModel {
         agents: List<AgentEntity>
     ): MainScreenState.Chat {
         val chatAgents = agents.filter { it.id in chat.agents }
+        val chatMessages = messages.filter { it.chatId == chat.id }
 
-        val messageModels = messages.map { msg ->
+        val messageModels = chatMessages.map { msg ->
             MainScreenState.Chat.Message(
                 author = if (msg.isUser) "User" else chatAgents.find { it.id == msg.owner }?.name ?: "Unknown",
                 content = msg.content,
@@ -158,7 +185,8 @@ class MainViewModel {
         }
 
         return MainScreenState.Chat(
-            name = chatAgents.joinToString { it.name },
+            id = chat.id,
+            name = chat.name,
             messages = messageModels,
             onSendClick = { content -> onUserMessage(chat.id, content, chatAgents) },
             onClearClick = {
@@ -166,7 +194,8 @@ class MainViewModel {
                     messageRepo.clear()
                     chatRepo.clear()
                 }
-            }
+            },
+            onSummarizeClick = { chatId -> onSummarizeClick(chatId) },
         )
     }
 
@@ -178,7 +207,8 @@ class MainViewModel {
                     owner = 0L,
                     content = content,
                     debugInfo = null,
-                    timestamp = System.currentTimeMillis()
+                    timestamp = System.currentTimeMillis(),
+                    history = true,
                 )
             )
             agents.forEach { request(chatId, it) }
@@ -192,7 +222,8 @@ class MainViewModel {
     private fun request(chatId: Long, agent: AgentEntity) {
         commandExecutor.trySend {
             val messages = messageRepo.getAll(chatId)
-            val dialog = messages.filter { it.isUser || it.owner == agent.id }
+            val agent = agentRepo.getAll().find { it.id == agent.id }!!
+            val dialog = messages.filter { it.history && (it.isUser || it.owner == agent.id) }
 
             val response = runCatching {
                 agentApi.send(agent.systemPrompt, agent.maxTokens, dialog)
@@ -222,7 +253,8 @@ class MainViewModel {
                             appendLine("Total time = $it")
                         }
                     },
-                    timestamp = System.currentTimeMillis()
+                    timestamp = System.currentTimeMillis(),
+                    history = true,
                 )
             )
         }

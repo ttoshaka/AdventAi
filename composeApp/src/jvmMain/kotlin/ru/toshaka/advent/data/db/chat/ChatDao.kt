@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.Flow
 interface ChatDao {
 
     @Insert
-    suspend fun insert(item: ChatEntity)
+    suspend fun insert(item: ChatEntity): Long
 
     @Query("SELECT * FROM ChatEntity")
     fun getAllAsFlow(): Flow<List<ChatEntity>>

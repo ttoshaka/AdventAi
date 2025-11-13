@@ -3,6 +3,7 @@ package ru.toshaka.advent.data.db.agent
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
+import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -21,4 +22,7 @@ interface AgentDao {
 
     @Query("DELETE FROM AgentEntity")
     suspend fun clearHistory()
+
+    @Update
+    suspend fun update(item: AgentEntity)
 }
