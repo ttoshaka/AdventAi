@@ -46,6 +46,8 @@ kotlin {
             implementation("ch.qos.logback:logback-classic:1.4.14")
             implementation("io.ktor:ktor-server-cio:3.3.1")
             implementation("org.jsoup:jsoup:1.21.2")
+            implementation("com.mikepenz:multiplatform-markdown-renderer:0.38.1")
+            implementation("com.mikepenz:multiplatform-markdown-renderer-m3:0.38.1")
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

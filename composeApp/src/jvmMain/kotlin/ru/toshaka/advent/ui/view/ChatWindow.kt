@@ -18,6 +18,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mikepenz.markdown.m3.Markdown
+import com.mikepenz.markdown.m3.markdownColor
+import com.mikepenz.markdown.m3.markdownTypography
 import ru.toshaka.advent.ui.MainScreenState
 
 @Composable
@@ -139,11 +142,14 @@ private fun ChatMessageBubble(message: MainScreenState.Chat.Message) {
                 color = Color.Gray
             )
             Spacer(Modifier.height(4.dp))
-            Text(
-                message.content,
-                style = MaterialTheme.typography.bodyMedium.copy(
-                    color = MaterialTheme.colorScheme.onSurface
-                )
+            Markdown(
+                content = message.content,
+                colors = markdownColor(
+                    text = Color.Gray
+                ),
+                typography = markdownTypography(
+                    text = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold)
+                ),
             )
             message.debug?.let { debug ->
                 Spacer(Modifier.height(6.dp))
