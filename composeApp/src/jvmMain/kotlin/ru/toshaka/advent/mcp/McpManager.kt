@@ -5,13 +5,22 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import ru.toshaka.advent.data.model.ChatRequest
+import ru.toshaka.advent.mcp.code.CodeClient
+import ru.toshaka.advent.mcp.code.CodeServer
+import ru.toshaka.advent.mcp.console.ConsoleClient
+import ru.toshaka.advent.mcp.console.ConsoleServer
+import ru.toshaka.advent.mcp.obsidian.ObsidianClient
+import ru.toshaka.advent.mcp.obsidian.ObsidianServer
 import ru.toshaka.advent.mcp.page.PageClient
 import ru.toshaka.advent.mcp.page.PageServer
 
 class McpManager {
 
-    private val mcp = mapOf<BaseServer, BaseClient>(
+    private val mcp = mapOf(
         PageServer() to PageClient(),
+        CodeServer() to CodeClient(),
+        ConsoleServer() to ConsoleClient(),
+        ObsidianServer() to ObsidianClient()
     )
     private val clients = mutableMapOf<String, BaseClient>()
     private val tools = mutableListOf<Tool>()
