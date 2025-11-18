@@ -18,6 +18,8 @@ import ru.toshaka.advent.data.db.chat.ChatRepository
 import ru.toshaka.advent.data.db.message.MessageEntity
 import ru.toshaka.advent.data.db.message.MessagesRepository
 import ru.toshaka.advent.data.db.message.isUser
+import ru.toshaka.advent.mcp.page.PageClient
+import ru.toshaka.advent.mcp.page.PageServer
 import java.io.File
 
 class MainViewModel {
@@ -57,6 +59,14 @@ class MainViewModel {
     }
 
     init {
+        scope.launch {
+            PageServer().launch()
+        }
+        scope.launch {
+            delay(1_000)
+            println("Tools list - ${PageClient().connect()}")
+        }
+
         scope.launch {
             val agents = agentRepo.getAll()
             _state.value = MainScreenState(
