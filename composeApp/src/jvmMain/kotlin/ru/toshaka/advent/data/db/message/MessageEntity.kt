@@ -15,3 +15,10 @@ data class MessageEntity(
 )
 
 val MessageEntity.isUser get() = owner == 0L
+
+val MessageEntity.type
+    get() = when (owner) {
+        -1L -> "tool"
+        0L -> "user"
+        else -> "assistant"
+    }

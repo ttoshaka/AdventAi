@@ -1,13 +1,10 @@
 package ru.toshaka.advent.data.agent
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.jsonObject
 import ru.toshaka.advent.data.AgentApi
+import ru.toshaka.advent.data.db.message.MessageEntity
+import ru.toshaka.advent.data.model.ChatRequest
 import ru.toshaka.advent.data.model.ChatResponse
 import java.util.*
 import kotlin.reflect.KClass
@@ -20,6 +17,8 @@ class AgentConfig<R : AiResponse> {
 
     var temperature: Float = 1f
 
+    var maxTokens: Int = 4096
+
     var model: String = ""
 
     var baseUrl: String = ""
@@ -27,54 +26,38 @@ class AgentConfig<R : AiResponse> {
     var key: String = ""
 
     var systemPrompt: String = ""
-        get() = field//.appendPromptDescription(outputFormats)
-
-    var inputFormats: KClass<out AiResponse>? = null
+        get() = field.appendPromptDescription(outputFormats)
 
     var outputFormats: List<KClass<*>> = listOf(AiResponse.TextResponse::class)
 
-    var isReceiveUserMessage: Boolean = false
+    var history: suspend () -> List<MessageEntity> = { emptyList() }
 
-    var history: () -> List<Pair<String, String>> = { emptyList() }
+    var tools: List<ChatRequest.Tool>? = null
 
-    lateinit var onAiResponse: (R, AgentReponseDebugInfo) -> Unit
-
-    var tools: (String, Map<String, Any?>) -> String = { q, w -> "" }
+    var onToolCall: suspend (String, String) -> String = { _, _ -> "" }
 }
 
 class Agent<R : AiResponse>(private val config: AgentConfig<R>) {
-    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+
     private val api = AgentApi(config)
 
-    val name: String = config.name
-    val isReceiveUserMessage = config.isReceiveUserMessage
-    var receiveType: KClass<out AiResponse>? = config.inputFormats
+    suspend fun request(): R {
+        return api.send().handle()
+    }
 
-    operator fun invoke(message: String, force: Boolean = false) = scope.launch {
-        val response = api(message, config.history(), force)
-        val mes = Json.decodeFromString<AiResponse>(response.choices.first().message.content) as R
-        val usage = response.usage!!
-        config.onAiResponse(
-            mes, AgentReponseDebugInfo(
-                promptToken = usage.promptTokens,
-                completionToken = usage.completionTokens,
-                totalToken = usage.totalTokens,
-                agentName = name,
-            )
-        )
-        if (mes is AiResponse.ToolCall) {
-            val toolResponse = config.tools(mes.name, Json.parseToJsonElement(mes.args).jsonObject)
-            send("Результат работы инструмента - $toolResponse")
+    suspend fun request(message: String): R {
+        return api.send(message).handle()
+    }
+
+    private suspend fun ChatResponse.handle(): R {
+        val toolCall = choices.first().message.toolCall?.firstOrNull()
+        if (toolCall != null) {
+            val toolResponse = config.onToolCall(toolCall.function.name, toolCall.function.arguments)
+            val response = api.send(toolResponse, toolCall)
+            return response.handle()
         }
-    }
-
-    suspend operator fun invoke(messages: List<String>, force: Boolean = false): ChatResponse {
-        val response = api(messages.toString(), emptyList(), force)
-        return response
-    }
-
-    private fun send(message: String) {
-        invoke(message, true)
+        val message = Json.decodeFromString<AiResponse>(choices.first().message.content) as R
+        return message
     }
 }
 

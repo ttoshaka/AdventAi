@@ -7,9 +7,10 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.actor
 import kotlinx.coroutines.flow.*
-import ru.toshaka.advent.data.AgentApi
 import ru.toshaka.advent.data.agent.Agent
+import ru.toshaka.advent.data.agent.AiResponse
 import ru.toshaka.advent.data.agent.DeepSeekChatAgent
+import ru.toshaka.advent.data.agent.Summarizer
 import ru.toshaka.advent.data.db.AppDatabase
 import ru.toshaka.advent.data.db.agent.AgentEntity
 import ru.toshaka.advent.data.db.agent.AgentRepository
@@ -18,6 +19,7 @@ import ru.toshaka.advent.data.db.chat.ChatRepository
 import ru.toshaka.advent.data.db.message.MessageEntity
 import ru.toshaka.advent.data.db.message.MessagesRepository
 import ru.toshaka.advent.data.db.message.isUser
+import ru.toshaka.advent.mcp.McpManager
 import java.io.File
 
 class MainViewModel {
@@ -28,24 +30,12 @@ class MainViewModel {
     private val messageRepo = MessagesRepository(database.getMessageDao())
     private val chatRepo = ChatRepository(database.getChatDao())
     private val agentRepo = AgentRepository(database.getAgentDao())
-    private val agentApi = AgentApi(DeepSeekChatAgent { })
+    private val mcpManager = McpManager()
 
     private val _state = MutableStateFlow(MainScreenState.Empty)
     val state: StateFlow<MainScreenState> = _state.asStateFlow()
 
-    private val summarizerAgent = Agent(DeepSeekChatAgent {
-        systemPrompt = """
-            Ты — система сжатия информации.
-            Тебе передан полный диалог между пользователем и ИИ-ассистентом.
-            Твоя задача — создать краткое, связное и информативное резюме диалога, сохранив ключевые вопросы пользователя, важные ответы ассистента и итоговые выводы.
-            Игнорируй приветствия, уточнения и повторяющиеся фразы.
-            Если обсуждалось несколько тем — отрази их все кратко, но раздельно.
-            Формат вывода:
-            Краткое описание цели диалога
-            Основные вопросы и ответы (по пунктам)
-            Итог / решение / следующий шаг (если есть)
-        """.trimIndent()
-    })
+    private val summarizerAgent = Agent(Summarizer)
 
     /** Последовательное выполнение команд */
     @OptIn(ObsoleteCoroutinesApi::class)
@@ -57,6 +47,9 @@ class MainViewModel {
     }
 
     init {
+        scope.launch {
+            mcpManager.launchServer()
+        }
         scope.launch {
             val agents = agentRepo.getAll()
             _state.value = MainScreenState(
@@ -105,7 +98,7 @@ class MainViewModel {
             val messages = messageRepo.getAll(chatId).map {
                 "${if (it.isUser) "user" else "assistant"} - ${it.content}"
             }
-            val response = summarizerAgent.invoke(messages, false)
+            val response = (summarizerAgent.request(messages.toString()) as AiResponse.TextResponse).content
             messageRepo.clear()
             val chat = chatRepo.getAll().find { it.id == chatId }!!
             val agents = agentRepo.getAll().filter { chat.agents.contains(it.id) }
@@ -113,7 +106,7 @@ class MainViewModel {
                 val system = """
                             ${agent.systemPrompt}
                             Сжатая информация о предыдущем разговоре:
-                            ${response.choices.first().message.content}
+                            $response
                         """.trimIndent()
                 messageRepo.save(
                     MessageEntity(
@@ -219,39 +212,42 @@ class MainViewModel {
         commandExecutor.trySend { messageRepo.save(message) }
     }
 
-    private fun request(chatId: Long, agent: AgentEntity) {
+    private fun request(chatId: Long, agentEntity: AgentEntity) {
         commandExecutor.trySend {
-            val messages = messageRepo.getAll(chatId)
-            val agent = agentRepo.getAll().find { it.id == agent.id }!!
-            val dialog = messages.filter { it.history && (it.isUser || it.owner == agent.id) }
+            val systemPrompt = agentRepo.getAll().find { it.id == agentEntity.id }!!.systemPrompt
+            val agent = Agent(
+                DeepSeekChatAgent {
+                    this.systemPrompt = systemPrompt
+                    maxTokens = agentEntity.maxTokens
+                    history = { messageRepo.getAll(chatId) }
+                    this.tools = mcpManager.getTools()
+                    onToolCall = { name, args -> mcpManager.callTool(name, args) }
+                }
+            )
+            val response = runCatching { agent.request() }
+                .getOrElse {
+                    println("Ошибка при запросе к агенту ${agentEntity.name}: ${it.message}")
+                    return@trySend
+                }
 
-            val response = runCatching {
-                agentApi.send(agent.systemPrompt, agent.maxTokens, dialog)
-            }.getOrElse {
-                println("Ошибка при запросе к агенту ${agent.name}: ${it.message}")
-                return@trySend
-            }
-
-            val answer = response.choices.firstOrNull() ?: return@trySend
-            val usage = response.usage
             messageRepo.save(
                 MessageEntity(
                     chatId = chatId,
-                    owner = agent.id,
-                    content = answer.message.content,
+                    owner = agentEntity.id,
+                    content = response.toString(),
                     debugInfo = buildString {
-                        usage?.promptTokens?.also {
-                            appendLine("Prompt tokens = $it")
-                        }
-                        usage?.completionTokens?.also {
-                            appendLine("Completion tokens = $it")
-                        }
-                        usage?.totalTokens?.also {
-                            appendLine("Total tokens = $it")
-                        }
-                        usage?.totalTime?.also {
-                            appendLine("Total time = $it")
-                        }
+                        //usage?.promptTokens?.also {
+                        //    appendLine("Prompt tokens = $it")
+                        //}
+                        //usage?.completionTokens?.also {
+                        //    appendLine("Completion tokens = $it")
+                        //}
+                        //usage?.totalTokens?.also {
+                        //    appendLine("Total tokens = $it")
+                        //}
+                        //usage?.totalTime?.also {
+                        //    appendLine("Total time = $it")
+                        //}
                     },
                     timestamp = System.currentTimeMillis(),
                     history = true,

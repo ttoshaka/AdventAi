@@ -2,6 +2,7 @@ package ru.toshaka.advent.data.model
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonObject
 
 @Serializable
 data class ChatRequest(
@@ -28,9 +29,9 @@ data class ChatRequest(
     @SerialName("top_p")
     val topP: Int = 1,
     @SerialName("tools")
-    val tools: String? = null,
+    val tools: List<Tool>? = null,
     @SerialName("tool_choice")
-    val toolChoice: String = "none",
+    val toolChoice: String = "auto",
     @SerialName("logprobs")
     val logprobs: Boolean = false,
     @SerialName("top_logprobs")
@@ -40,15 +41,39 @@ data class ChatRequest(
     @Serializable
     data class ChatMessage(
         @SerialName("content")
-        val content: String,
-
+        val content: String?,
         @SerialName("role")
-        val role: String
+        val role: String,
+        @SerialName("tool_call_id")
+        val toolCallId: String? = null,
+        @SerialName("tool_calls")
+        val toolCalls: List<ChatResponse.ToolCall>? = null,
     )
 
     @Serializable
     data class ResponseFormat(
         @SerialName("type")
         val type: String
+    )
+
+
+    @Serializable
+    data class Tool(
+        val type: String,
+        val function: ToolFunction
+    )
+
+    @Serializable
+    data class ToolFunction(
+        val name: String,
+        val description: String?,
+        val parameters: ToolParameter
+    )
+
+    @Serializable
+    data class ToolParameter(
+        val type: String,
+        val properties: JsonObject,
+        val required: List<String>?
     )
 }

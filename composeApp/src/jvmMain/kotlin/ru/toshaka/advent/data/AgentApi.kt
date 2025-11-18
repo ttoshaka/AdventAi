@@ -13,7 +13,7 @@ import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
 import ru.toshaka.advent.data.agent.AgentConfig
-import ru.toshaka.advent.data.db.message.MessageEntity
+import ru.toshaka.advent.data.db.message.type
 import ru.toshaka.advent.data.model.ChatRequest
 import ru.toshaka.advent.data.model.ChatResponse
 
@@ -46,41 +46,7 @@ class AgentApi(
         }
     }
 
-    suspend fun send(system: String, maxTokens: Int, dialog: List<MessageEntity>): ChatResponse {
-        val requestBody = ChatRequest(
-            messages = buildList {
-                add(
-                    ChatRequest.ChatMessage(
-                        content = system,
-                        role = "system"
-                    )
-                )
-                dialog.forEach {
-                    add(
-                        ChatRequest.ChatMessage(
-                            content = it.content,
-                            role = if (it.owner == 0L) "user" else "assistant"
-                        )
-                    )
-                }
-            },
-            model = agentConfig.model,
-            responseFormat = ChatRequest.ResponseFormat("text"),
-            temperature = agentConfig.temperature,
-            maxTokens = maxTokens,
-        )
-
-        return client.post(agentConfig.baseUrl) {
-            contentType(ContentType.Application.Json)
-            setBody(requestBody)
-        }.body()
-    }
-
-    suspend operator fun invoke(
-        message: String,
-        history: List<Pair<String, String>>,
-        force: Boolean = false
-    ): ChatResponse {
+    suspend fun send(): ChatResponse {
         val requestBody = ChatRequest(
             messages = buildList {
                 add(
@@ -89,26 +55,94 @@ class AgentApi(
                         role = "system"
                     )
                 )
-                history.forEach {
+                agentConfig.history().forEach { message ->
+                    if (!message.history) return@forEach
                     add(
                         ChatRequest.ChatMessage(
-                            content = it.second,
-                            role = it.first
-                        )
-                    )
-                }
-                if (history.isEmpty() || force) {
-                    add(
-                        ChatRequest.ChatMessage(
-                            content = message,
-                            role = "user"
+                            content = message.content,
+                            role = message.type
                         )
                     )
                 }
             },
             model = agentConfig.model,
-            responseFormat = ChatRequest.ResponseFormat("text"),
+            responseFormat = ChatRequest.ResponseFormat("json_object"),
             temperature = agentConfig.temperature,
+            maxTokens = agentConfig.maxTokens,
+            tools = agentConfig.tools,
+        )
+
+        return client.post(agentConfig.baseUrl) {
+            contentType(ContentType.Application.Json)
+            setBody(requestBody)
+        }.body()
+    }
+
+    suspend fun send(message: String): ChatResponse {
+        val requestBody = ChatRequest(
+            messages = buildList {
+                add(
+                    ChatRequest.ChatMessage(
+                        content = agentConfig.systemPrompt,
+                        role = "system"
+                    )
+                )
+                add(
+                    ChatRequest.ChatMessage(
+                        content = message,
+                        role = "user"
+                    )
+                )
+            },
+            model = agentConfig.model,
+            responseFormat = ChatRequest.ResponseFormat("json_object"),
+            temperature = agentConfig.temperature,
+            maxTokens = agentConfig.maxTokens,
+        )
+
+        return client.post(agentConfig.baseUrl) {
+            contentType(ContentType.Application.Json)
+            setBody(requestBody)
+        }.body()
+    }
+
+    suspend fun send(toolResponse: String, toolCall: ChatResponse.ToolCall): ChatResponse {
+        val requestBody = ChatRequest(
+            messages = buildList {
+                add(
+                    ChatRequest.ChatMessage(
+                        content = agentConfig.systemPrompt,
+                        role = "system"
+                    )
+                )
+                agentConfig.history().forEach {
+                    add(
+                        ChatRequest.ChatMessage(
+                            content = it.content,
+                            role = it.type
+                        )
+                    )
+                }
+                add(
+                    ChatRequest.ChatMessage(
+                        content = null,
+                        role = "assistant",
+                        toolCalls = listOf(toolCall)
+                    )
+                )
+                add(
+                    ChatRequest.ChatMessage(
+                        content = toolResponse,
+                        role = "tool",
+                        toolCallId = toolCall.id
+                    )
+                )
+            },
+            model = agentConfig.model,
+            responseFormat = ChatRequest.ResponseFormat("json_object"),
+            temperature = agentConfig.temperature,
+            maxTokens = agentConfig.maxTokens,
+            tools = agentConfig.tools,
         )
 
         return client.post(agentConfig.baseUrl) {

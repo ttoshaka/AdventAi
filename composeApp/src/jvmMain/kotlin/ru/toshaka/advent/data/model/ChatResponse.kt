@@ -33,11 +33,27 @@ data class ChatResponse(
     )
 
     @Serializable
+    data class ToolCall(
+        val index: Int,
+        val id: String,
+        val type: String,
+        val function: ToolFunction,
+    )
+
+    @Serializable
+    data class ToolFunction(
+        val name: String,
+        val arguments: String,
+    )
+
+    @Serializable
     data class Message(
         @SerialName("role")
         val role: String,
         @SerialName("content")
-        val content: String
+        val content: String,
+        @SerialName("tool_calls")
+        val toolCall: List<ToolCall>? = null,
     )
 
     @Serializable
