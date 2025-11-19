@@ -13,6 +13,8 @@ import ru.toshaka.advent.mcp.obsidian.ObsidianClient
 import ru.toshaka.advent.mcp.obsidian.ObsidianServer
 import ru.toshaka.advent.mcp.page.PageClient
 import ru.toshaka.advent.mcp.page.PageServer
+import ru.toshaka.advent.mcp.util.UtilsClient
+import ru.toshaka.advent.mcp.util.UtilsServer
 
 class McpManager {
 
@@ -20,7 +22,8 @@ class McpManager {
         PageServer() to PageClient(),
         CodeServer() to CodeClient(),
         ConsoleServer() to ConsoleClient(),
-        ObsidianServer() to ObsidianClient()
+        ObsidianServer() to ObsidianClient(),
+        UtilsServer() to UtilsClient(),
     )
     private val clients = mutableMapOf<String, BaseClient>()
     private val tools = mutableListOf<Tool>()

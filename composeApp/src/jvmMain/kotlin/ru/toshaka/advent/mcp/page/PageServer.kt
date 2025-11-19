@@ -12,7 +12,7 @@ class PageServer : BaseServer() {
     override val port: Int = 3003
     override val host: String = "0.0.0.0"
     override val name: String = "page_server"
-    override val version: String = "0.0.0.0"
+    override val version: String = "0.0.1"
 
     override fun createTools(): List<RegisteredTool> {
         val factTool = RegisteredTool(
