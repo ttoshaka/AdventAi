@@ -70,7 +70,6 @@ fun String.appendPromptDescription(classes: List<KClass<*>>): String =
         appendLine("Ты — AI, который всегда отвечает строго в JSON.")
         appendLine("Формат ответов должен соответствовать одной из следующих схем:")
         appendLine()
-        appendLine("Поддерживаемые типы ответов:")
         for (clazz in classes) {
             val serialName = clazz.findAnnotation<SerialName>()?.value ?: clazz.simpleName?.lowercase()
             appendLine()
