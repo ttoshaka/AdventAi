@@ -47,7 +47,7 @@ class ObsidianServer : BaseServer() {
                 outputSchema = null,
                 annotations = null,
                 name = "Writer",
-                description = "Создает файл с указанным названием и переданным содержимым",
+                description = "Используется для сохранение любой информации, которую пользователь явно просит сохранить или записать.",
                 inputSchema = Tool.Input(
                     properties = buildJsonObject {
                         putJsonObject("fileName") {

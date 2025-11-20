@@ -34,10 +34,10 @@ class AgentConfig<R : AiResponse> {
 
     var tools: List<ChatRequest.Tool>? = null
 
-    var onToolCall: suspend (String, String) -> String = { _, _ -> "" }
+    var onToolCall: suspend (ChatResponse.ToolCall) -> String = { "" }
 }
 
-class Agent<R : AiResponse>(private val config: AgentConfig<R>) {
+class Agent<out R : AiResponse>(private val config: AgentConfig<R>) {
 
     private val api = AgentApi(config)
 
@@ -52,24 +52,20 @@ class Agent<R : AiResponse>(private val config: AgentConfig<R>) {
     private suspend fun ChatResponse.handle(): R {
         val toolCall = choices.first().message.toolCall?.firstOrNull()
         if (toolCall != null) {
-            val toolResponse = config.onToolCall(toolCall.function.name, toolCall.function.arguments)
-            val response = api.send(toolResponse, toolCall)
-            return response.handle()
+            config.onToolCall(toolCall)
+            return request()
         }
         val message = Json.decodeFromString<AiResponse>(choices.first().message.content) as R
         return message
     }
 }
 
-fun <R : AiResponse> Agent(config: AgentConfig<R>.() -> Unit): Agent<R> =
-    Agent(AgentConfig<R>().apply(config))
-
 fun String.appendPromptDescription(classes: List<KClass<*>>): String =
     buildString {
         appendLine(this@appendPromptDescription)
-        appendLine("Ты — AI, который всегда отвечает строго в JSON.")
-        appendLine("Формат ответов должен соответствовать одной из следующих схем:")
-        appendLine()
+        appendLine("Ты — ИИ, который ДОЛЖЕН отвечать строго в одном из следующих форматов JSON.")
+        appendLine("Запрещены любые ответы вне описанных структур.")
+        appendLine("Доступные типы ответов:")
         for (clazz in classes) {
             val serialName = clazz.findAnnotation<SerialName>()?.value ?: clazz.simpleName?.lowercase()
             appendLine()
@@ -82,8 +78,11 @@ fun String.appendPromptDescription(classes: List<KClass<*>>): String =
                 appendLine("- $name ($typeName): $description")
             }
         }
-        appendLine()
-        appendLine("Отвечай только одним JSON-объектом, без текста вне фигурных скобок.")
+        appendLine("Правила:")
+        appendLine("1. Все ответы должны быть корректным JSON объектом одной из указанных структур.")
+        appendLine("2. Если существует возможность решить задачу через MCP инструмент — обязательно используй формат type:\"tool\".")
+        appendLine("3. Если инструмент не подходит — используй type:\"text\", type:\"question\" или type:\"kotlin\".")
+        appendLine("4. Никаких дополнительных комментариев, пояснений или текста за пределами JSON.")
     }
 
 @Target(AnnotationTarget.PROPERTY)

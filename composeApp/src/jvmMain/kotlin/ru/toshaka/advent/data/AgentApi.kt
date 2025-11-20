@@ -60,7 +60,22 @@ class AgentApi(
                     add(
                         ChatRequest.ChatMessage(
                             content = message.content,
-                            role = message.type
+                            role = message.type,
+                            toolCallId = message.toolCallId,
+                            toolCalls = message.toolCallName?.let {
+                                listOf(
+                                    ChatResponse.ToolCall(
+                                        index = message.toolCallIndex!!,
+                                        id = message.toolCallId!!,
+                                        type = message.toolCallType!!,
+                                        function = ChatResponse.ToolFunction(
+                                            name = message.toolCallName!!,
+                                            arguments = message.toolCallArguments!!,
+                                        )
+
+                                    )
+                                )
+                            }
                         )
                     )
                 }
@@ -98,6 +113,7 @@ class AgentApi(
             responseFormat = ChatRequest.ResponseFormat("json_object"),
             temperature = agentConfig.temperature,
             maxTokens = agentConfig.maxTokens,
+            tools = agentConfig.tools,
         )
 
         return client.post(agentConfig.baseUrl) {

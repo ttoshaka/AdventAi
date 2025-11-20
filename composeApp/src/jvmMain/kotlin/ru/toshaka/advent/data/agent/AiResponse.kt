@@ -51,7 +51,7 @@ sealed interface AiResponse {
         @SerialName("name")
         @FieldDescription("Название инструмента")
         val name: String,
-        @SerialName("args")
+        @SerialName("arguments")
         @FieldDescription("Данные для инструмента. Должен лежать строка, в которой будет json соответствующий json формату который требуется для вызова инструмента. ")
         val args: String,
     ) : AiResponse {

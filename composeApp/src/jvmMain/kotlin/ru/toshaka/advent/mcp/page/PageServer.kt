@@ -6,6 +6,7 @@ import io.modelcontextprotocol.kotlin.sdk.Tool
 import io.modelcontextprotocol.kotlin.sdk.server.RegisteredTool
 import kotlinx.serialization.json.*
 import org.jsoup.Jsoup
+import org.jsoup.parser.Parser
 import ru.toshaka.advent.mcp.BaseServer
 
 class PageServer : BaseServer() {
@@ -21,7 +22,7 @@ class PageServer : BaseServer() {
                 outputSchema = null,
                 annotations = null,
                 name = "Page",
-                description = "Загружает содержимое страницы сайта",
+                description = "Загрузка и парсинг содержимого переданных web-сайтов и RSS-лент, веб-страниц и всего остального что имеет url. Этот инструмент умеет парсить RSS-ленты",
                 inputSchema = Tool.Input(
                     properties = buildJsonObject {
                         putJsonObject("url") {
@@ -31,7 +32,7 @@ class PageServer : BaseServer() {
                             }
                             put(
                                 "description",
-                                JsonPrimitive("Список url страниц сайтов, содержимое которых нужно загрузить.")
+                                JsonPrimitive("Список url web-сайтов, содержимое которых нужно загрузить и распарсить.")
                             )
                         }
                     },
@@ -43,16 +44,47 @@ class PageServer : BaseServer() {
                 callToolRequest.arguments["url"]!!.jsonArray.forEach {
                     val url = it.jsonPrimitive.content
                     println("Loading url... $url")
-                    val doc = Jsoup.connect(url).get()
-                    doc.select("script, style, header, footer, nav, noscript, iframe").remove()
-                    val main = doc.select("main, article, #content, .content").firstOrNull() ?: doc.body()
-                    val text = main.text().replace(Regex("\\s+"), " ").trim()
-                    appendLine("$url - $text")
+                    val content = loadUrl(url)
+                    appendLine("$url - $content")
                     appendLine()
                 }
             }
+            println("URL response = $response")
             CallToolResult(content = listOf(TextContent(response)))
         }
         return listOf(factTool)
+    }
+
+    private fun loadUrl(url: String): String {
+        val body = Jsoup.connect(url).ignoreContentType(true).timeout(60_000).execute().body()
+        return if (body.trimStart().startsWith("<rss") || body.contains("<channel>")) {
+            loadRssContent(body)
+        } else {
+            loadHtmlContent(body)
+        }
+    }
+
+    private fun loadRssContent(xml: String): String {
+        val doc = Jsoup.parse(xml, "", Parser.xmlParser())
+        val items = doc.select("item")
+        return buildString {
+            items.forEach { item ->
+                val title = item.selectFirst("title")?.text().orEmpty()
+                val link = item.selectFirst("link")?.text().orEmpty()
+                val descriptionRaw = item.selectFirst("description")?.text().orEmpty()
+                val description = Jsoup.parse(descriptionRaw).text()
+                appendLine("Title: $title")
+                appendLine("Link: $link")
+                appendLine("Description: $description")
+                appendLine()
+            }
+        }
+    }
+
+    private fun loadHtmlContent(html: String): String {
+        val doc = Jsoup.parse(html)
+        doc.select("script, style, header, footer, nav, noscript, iframe").remove()
+        val main = doc.select("main, article, #content, .content").firstOrNull() ?: doc.body()
+        return main.text().replace(Regex("\\s+"), " ").trim()
     }
 }

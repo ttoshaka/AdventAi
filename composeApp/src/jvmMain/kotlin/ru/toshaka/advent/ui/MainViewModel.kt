@@ -7,10 +7,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.actor
 import kotlinx.coroutines.flow.*
-import ru.toshaka.advent.data.agent.Agent
-import ru.toshaka.advent.data.agent.AiResponse
-import ru.toshaka.advent.data.agent.DeepSeekChatAgent
-import ru.toshaka.advent.data.agent.Summarizer
+import ru.toshaka.advent.data.agent.*
 import ru.toshaka.advent.data.db.AppDatabase
 import ru.toshaka.advent.data.db.agent.AgentEntity
 import ru.toshaka.advent.data.db.agent.AgentRepository
@@ -66,6 +63,10 @@ class MainViewModel {
                 onSaveAgent = ::onSaveAgent,
                 onSaveChat = ::onSaveChat
             )
+        }
+        scope.launch {
+            delay(10_000)
+            PeriodicAgent(mcpManager).start()
         }
         observeChatsAndMessages()
     }
@@ -162,12 +163,12 @@ class MainViewModel {
         agents: List<AgentEntity>
     ): MainScreenState.Chat {
         val chatAgents = agents.filter { it.id in chat.agents }
-        val chatMessages = messages.filter { it.chatId == chat.id }
+        val chatMessages = messages.filter { it.chatId == chat.id && it.toolCallId == null}
 
         val messageModels = chatMessages.map { msg ->
             MainScreenState.Chat.Message(
                 author = if (msg.isUser) "User" else chatAgents.find { it.id == msg.owner }?.name ?: "Unknown",
-                content = msg.content,
+                content = msg.content.orEmpty(),
                 position = if (msg.isUser)
                     MainScreenState.Chat.Message.Position.RIGHT
                 else
@@ -221,7 +222,36 @@ class MainViewModel {
                     maxTokens = agentEntity.maxTokens
                     history = { messageRepo.getAll(chatId) }
                     this.tools = mcpManager.getTools()
-                    onToolCall = { name, args -> mcpManager.callTool(name, args) }
+                    onToolCall = { toolCall ->
+                        messageRepo.save(
+                            MessageEntity(
+                                chatId = chatId,
+                                owner = agentEntity.id,
+                                content = null,
+                                toolCallIndex = toolCall.index,
+                                toolCallId = toolCall.id,
+                                toolCallType = toolCall.type,
+                                toolCallName = toolCall.function.name,
+                                toolCallArguments = toolCall.function.arguments,
+                                debugInfo = null,
+                                timestamp = System.currentTimeMillis(),
+                                history = true
+                            )
+                        )
+                        val toolResponse = mcpManager.callTool(toolCall.function.name, toolCall.function.arguments)
+                        messageRepo.save(
+                            MessageEntity(
+                                chatId = chatId,
+                                owner = -1L,
+                                content = toolResponse,
+                                toolCallId = toolCall.id,
+                                debugInfo = null,
+                                timestamp = System.currentTimeMillis(),
+                                history = true
+                            )
+                        )
+                        toolResponse
+                    }
                 }
             )
             val response = runCatching { agent.request() }

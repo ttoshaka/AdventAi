@@ -7,8 +7,6 @@ import kotlinx.coroutines.launch
 import ru.toshaka.advent.data.model.ChatRequest
 import ru.toshaka.advent.mcp.code.CodeClient
 import ru.toshaka.advent.mcp.code.CodeServer
-import ru.toshaka.advent.mcp.console.ConsoleClient
-import ru.toshaka.advent.mcp.console.ConsoleServer
 import ru.toshaka.advent.mcp.obsidian.ObsidianClient
 import ru.toshaka.advent.mcp.obsidian.ObsidianServer
 import ru.toshaka.advent.mcp.page.PageClient
@@ -20,10 +18,9 @@ class McpManager {
 
     private val mcp = mapOf(
         PageServer() to PageClient(),
-        CodeServer() to CodeClient(),
-        ConsoleServer() to ConsoleClient(),
-        ObsidianServer() to ObsidianClient(),
         UtilsServer() to UtilsClient(),
+        ObsidianServer() to ObsidianClient(),
+        CodeServer() to CodeClient(),
     )
     private val clients = mutableMapOf<String, BaseClient>()
     private val tools = mutableListOf<Tool>()
@@ -43,7 +40,9 @@ class McpManager {
     }
 
     suspend fun callTool(name: String, args: String): String {
-        return clients[name]?.call(name, args)!!
+        val response = clients[name]?.call(name, args)!!
+        println("Tool $name with $args reponse $response")
+        return response
     }
 
     fun getTools(): List<ChatRequest.Tool> {
