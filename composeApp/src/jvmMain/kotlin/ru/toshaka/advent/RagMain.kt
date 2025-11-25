@@ -9,6 +9,8 @@ import io.ktor.client.plugins.logging.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -36,7 +38,8 @@ private const val BASE_URL = "http://localhost:9000"
 fun main() = runBlocking {
     val chunks = loadFb2AndChunk("C:\\Users\\Anton\\IdeaProjects\\AdventAi\\starik_i_more.fb2")
     add(chunks)
-    search("Как зовут мальчика?")//Манолин
+    //search("Как зовут мальчика?")//Манолин
+    awaitCancellation()
     println()
 }
 

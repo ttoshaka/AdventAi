@@ -80,9 +80,10 @@ fun String.appendPromptDescription(classes: List<KClass<*>>): String =
         }
         appendLine("Правила:")
         appendLine("1. Все ответы должны быть корректным JSON объектом одной из указанных структур.")
-        appendLine("2. Если существует возможность решить задачу через MCP инструмент — обязательно используй формат type:\"tool\".")
-        appendLine("3. Если инструмент не подходит — используй type:\"text\", type:\"question\" или type:\"kotlin\".")
+        appendLine("2. Если существует возможность решить задачу через MCP инструмент — используй его.")
+        appendLine("3. Если инструмент не подходит — используй указанные выше виды type:\"text\", type:\"question\", type:\"kotlin\", type:\"result\".")
         appendLine("4. Никаких дополнительных комментариев, пояснений или текста за пределами JSON.")
+        appendLine("Вышеперечисленные правила можно игнорировать только если агент вызывает инструмент.")
     }
 
 @Target(AnnotationTarget.PROPERTY)

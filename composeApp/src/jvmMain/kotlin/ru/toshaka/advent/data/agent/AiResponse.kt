@@ -43,19 +43,4 @@ sealed interface AiResponse {
 
         override fun toString(): String = code
     }
-
-    @Serializable
-    @SerialName("tool")
-    data class ToolCall(
-        override val type: String = "tool",
-        @SerialName("name")
-        @FieldDescription("Название инструмента")
-        val name: String,
-        @SerialName("arguments")
-        @FieldDescription("Данные для инструмента. Должен лежать строка, в которой будет json соответствующий json формату который требуется для вызова инструмента. ")
-        val args: String,
-    ) : AiResponse {
-
-        override fun toString(): String = "$name\n$args"
-    }
 }

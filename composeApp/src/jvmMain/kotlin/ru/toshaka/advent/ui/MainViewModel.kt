@@ -47,27 +47,6 @@ class MainViewModel {
         scope.launch {
             mcpManager.launchServer()
         }
-        scope.launch {
-            val agents = agentRepo.getAll()
-            _state.value = MainScreenState(
-                chats = emptyList(),
-                availableAgents = agents.map { agent ->
-                    MainScreenState.Agent(
-                        name = agent.name,
-                        systemPrompt = agent.systemPrompt,
-                        id = agent.id,
-                        temperature = agent.temperature,
-                        maxTokens = agent.maxTokens,
-                    )
-                },
-                onSaveAgent = ::onSaveAgent,
-                onSaveChat = ::onSaveChat
-            )
-        }
-        scope.launch {
-            delay(10_000)
-            PeriodicAgent(mcpManager).start()
-        }
         observeChatsAndMessages()
     }
 
@@ -163,7 +142,7 @@ class MainViewModel {
         agents: List<AgentEntity>
     ): MainScreenState.Chat {
         val chatAgents = agents.filter { it.id in chat.agents }
-        val chatMessages = messages.filter { it.chatId == chat.id && it.toolCallId == null}
+        val chatMessages = messages.filter { it.chatId == chat.id && it.toolCallId == null }
 
         val messageModels = chatMessages.map { msg ->
             MainScreenState.Chat.Message(

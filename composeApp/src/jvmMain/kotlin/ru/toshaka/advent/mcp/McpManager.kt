@@ -11,12 +11,15 @@ import ru.toshaka.advent.mcp.obsidian.ObsidianClient
 import ru.toshaka.advent.mcp.obsidian.ObsidianServer
 import ru.toshaka.advent.mcp.page.PageClient
 import ru.toshaka.advent.mcp.page.PageServer
+import ru.toshaka.advent.mcp.rag.RagClient
+import ru.toshaka.advent.mcp.rag.RagServer
 import ru.toshaka.advent.mcp.util.UtilsClient
 import ru.toshaka.advent.mcp.util.UtilsServer
 
 class McpManager {
 
     private val mcp = mapOf(
+        RagServer() to RagClient(),
         PageServer() to PageClient(),
         UtilsServer() to UtilsClient(),
         ObsidianServer() to ObsidianClient(),
