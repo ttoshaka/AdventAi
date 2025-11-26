@@ -10,6 +10,12 @@ sealed interface AiResponse {
 
     @Serializable
     @SerialName("text")
+    @ResponseDescription("""
+        Используется для обычного текстового сообщения.
+        Пример:
+            Пользователь - Расскажи интересный факт.
+            ИИ-агент - У осьминогов синий цвет крови.
+    """)
     data class TextResponse(
         override val type: String = "text",
         @SerialName("content")
@@ -22,6 +28,12 @@ sealed interface AiResponse {
 
     @Serializable
     @SerialName("question")
+    @ResponseDescription("""
+        Используется для обычного текстового сообщения.
+        Пример:
+            Пользователь - Задай мне вопрос.
+            ИИ-агент - Как тебя зовут?.
+    """)
     data class QuestionResponse(
         override val type: String = "question",
         @SerialName("question")
@@ -34,6 +46,12 @@ sealed interface AiResponse {
 
     @Serializable
     @SerialName("kotlin")
+    @ResponseDescription("""
+        Используется для обычного текстового сообщения.
+        Пример:
+            Пользователь - Напиши метод на языке котлин который складывает два числа.
+            ИИ-агент - fun summarizer(first: Int, second: Int): Int = first + second.
+    """)
     data class KotlinCodeResponse(
         override val type: String = "kotlin",
         @SerialName("code")

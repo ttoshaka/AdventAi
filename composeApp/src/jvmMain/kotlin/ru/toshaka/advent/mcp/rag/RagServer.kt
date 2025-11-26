@@ -58,18 +58,27 @@ class RagServer : BaseServer() {
                                 JsonPrimitive("Запрос пользователя.")
                             )
                         }
+                        putJsonObject("rerank") {
+                            put("type", JsonPrimitive("boolean"))
+                            put(
+                                "description",
+                                JsonPrimitive("Нужно ли использовать реранкинг")
+                            )
+                        }
                     },
                     required = listOf("text")
                 )
             )
         ) { callToolRequest ->
             val text = callToolRequest.arguments["text"]!!.jsonPrimitive.content
+            val rerank = callToolRequest.arguments["rerank"]?.jsonPrimitive?.boolean ?: false
             val response = client.post("http://localhost:9000/search") {
                 contentType(ContentType.Application.Json)
                 setBody(
                     SearchRequest(
                         query = text,
                         top_k = 5,
+                        top_n = if (rerank) 20 else null
                     )
                 )
             }.body<SearchResponse>()

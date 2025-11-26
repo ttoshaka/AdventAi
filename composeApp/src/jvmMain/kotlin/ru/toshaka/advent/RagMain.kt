@@ -30,14 +30,17 @@ private val client = HttpClient(CIO) {
         )
     }
     install(HttpTimeout) {
-        requestTimeoutMillis = 60_000
+        requestTimeoutMillis = Long.MAX_VALUE
     }
 }
 private const val BASE_URL = "http://localhost:9000"
 
 fun main() = runBlocking {
-    val chunks = loadFb2AndChunk("C:\\Users\\Anton\\IdeaProjects\\AdventAi\\starik_i_more.fb2")
-    add(chunks)
+
+
+    val chunks = loadFb2AndChunk("C:\\Users\\Anton\\IdeaProjects\\AdventAi\\kniga.fb2")
+    val added = add(chunks)
+    println("Added = $added")
     //search("Как зовут мальчика?")//Манолин
     awaitCancellation()
     println()
@@ -48,6 +51,7 @@ fun loadFb2AndChunk(
     chunkSize: Int = 100,
     overlap: Int = 50,
 ): List<String> {
+    println("Start reading...")
     val xmlFile = File(filePath)
     val docBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder()
     val doc = docBuilder.parse(xmlFile)
@@ -76,21 +80,11 @@ fun loadFb2AndChunk(
     return chunks
 }
 
-suspend fun search(query: String): SearchResponse =
-    client.post("$BASE_URL/search") {
-        contentType(ContentType.Application.Json)
-        setBody(
-            SearchRequest(
-                query = query,
-                top_k = 5,
-            )
-        )
-    }.body()
-
 @Serializable
 data class SearchRequest(
     val query: String,
-    val top_k: Int
+    val top_k: Int,
+    val top_n: Int?,
 )
 
 @Serializable
@@ -100,7 +94,6 @@ data class SearchResponse(
     @Serializable
     data class Result(
         val text: String,
-        val distance: Float
     )
 }
 

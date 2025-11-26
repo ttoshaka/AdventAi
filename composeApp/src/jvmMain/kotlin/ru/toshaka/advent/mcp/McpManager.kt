@@ -20,10 +20,6 @@ class McpManager {
 
     private val mcp = mapOf(
         RagServer() to RagClient(),
-        PageServer() to PageClient(),
-        UtilsServer() to UtilsClient(),
-        ObsidianServer() to ObsidianClient(),
-        CodeServer() to CodeClient(),
     )
     private val clients = mutableMapOf<String, BaseClient>()
     private val tools = mutableListOf<Tool>()

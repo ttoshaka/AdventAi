@@ -165,7 +165,7 @@ class MainViewModel {
             onClearClick = {
                 commandExecutor.trySend {
                     messageRepo.clear()
-                    chatRepo.clear()
+                    //chatRepo.clear()
                 }
             },
             onSummarizeClick = { chatId -> onSummarizeClick(chatId) },
@@ -235,7 +235,7 @@ class MainViewModel {
             )
             val response = runCatching { agent.request() }
                 .getOrElse {
-                    println("Ошибка при запросе к агенту ${agentEntity.name}: ${it.message}")
+                    println("Ошибка при запросе к агенту ${agentEntity.name}: ${it}")
                     return@trySend
                 }
 

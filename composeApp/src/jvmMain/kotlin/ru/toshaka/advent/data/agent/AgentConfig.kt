@@ -1,6 +1,7 @@
 package ru.toshaka.advent.data.agent
 
 import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import ru.toshaka.advent.data.AgentApi
 import ru.toshaka.advent.data.db.message.MessageEntity
@@ -61,13 +62,28 @@ class Agent<out R : AiResponse>(private val config: AgentConfig<R>) {
 }
 
 fun String.appendPromptDescription(classes: List<KClass<*>>): String =
+    """
+    Ты - ИИ-агент, возможны только два варианта результата твоей работы:
+        1) Ответ на запрос пользователя. В таком случае ты ДОЛЖЕН отвечать строго в одном из следующих форматов JSON:
+            Все ответы должны быть корректным JSON объектом одной из указанных структур.
+            Никаких дополнительных комментариев, пояснений или текста за пределами JSON.
+            ${getVariants(classes)}
+        2) Вызов инструмента MCP. В таком случае ты должен вызвать инструмент и в ответе описать название инструмента и переданные параметры.
+        
+    Правила которые ты ОБЯЗАН придерживаться:
+        1) Если существует возможность решить задачу через MCP инструмент — используй его.;
+        2) Если в твоём распоряжение есть инструмент для взаимодействия с RAG, ты считаешь что тебе недостаточно текущих данных и ни один другой инструмент не может помочь, то обязательно используй RAG. .
+        3) Если по какой-либо причине тебе нечего ответить, то напиши почему это произошло.
+        4) Если ты собираешь воспользоваться инструментом, то ты не должен описывать свои действия, сразу используй инструмент.
+    $this
+    """.trimIndent()
+
+fun getVariants(classes: List<KClass<*>>): String =
     buildString {
-        appendLine(this@appendPromptDescription)
-        appendLine("Ты — ИИ, который ДОЛЖЕН отвечать строго в одном из следующих форматов JSON.")
-        appendLine("Запрещены любые ответы вне описанных структур.")
-        appendLine("Доступные типы ответов:")
         for (clazz in classes) {
             val serialName = clazz.findAnnotation<SerialName>()?.value ?: clazz.simpleName?.lowercase()
+            appendLine()
+            appendLine("Описание формата: ${clazz.findAnnotation<ResponseDescription>()!!.text}")
             appendLine()
             appendLine("type: \"$serialName\"")
             appendLine("Поля:")
@@ -78,14 +94,38 @@ fun String.appendPromptDescription(classes: List<KClass<*>>): String =
                 appendLine("- $name ($typeName): $description")
             }
         }
-        appendLine("Правила:")
-        appendLine("1. Все ответы должны быть корректным JSON объектом одной из указанных структур.")
-        appendLine("2. Если существует возможность решить задачу через MCP инструмент — используй его.")
-        appendLine("3. Если инструмент не подходит — используй указанные выше виды type:\"text\", type:\"question\", type:\"kotlin\", type:\"result\".")
-        appendLine("4. Никаких дополнительных комментариев, пояснений или текста за пределами JSON.")
-        appendLine("Вышеперечисленные правила можно игнорировать только если агент вызывает инструмент.")
     }
+
+//fun String.appendPromptDescription(classes: List<KClass<*>>): String =
+//    buildString {
+//        appendLine(this@appendPromptDescription)
+//        appendLine("Ты — ИИ, который ДОЛЖЕН отвечать строго в одном из следующих форматов JSON.")
+//        appendLine("Запрещены любые ответы вне описанных структур.")
+//        appendLine("Доступные типы ответов:")
+//        for (clazz in classes) {
+//            val serialName = clazz.findAnnotation<SerialName>()?.value ?: clazz.simpleName?.lowercase()
+//            appendLine()
+//            appendLine("type: \"$serialName\"")
+//            appendLine("Поля:")
+//            clazz.memberProperties.forEach { prop ->
+//                val name = prop.findAnnotation<SerialName>()?.value ?: prop.name
+//                val typeName = prop.returnType.toString().substringAfterLast('.')
+//                val description = prop.findAnnotation<FieldDescription>()?.text ?: "(описание отсутствует)"
+//                appendLine("- $name ($typeName): $description")
+//            }
+//        }
+//        appendLine("Правила:")
+//        appendLine("1. Все ответы должны быть корректным JSON объектом одной из указанных структур.")
+//        appendLine("2. Если существует возможность решить задачу через MCP инструмент — используй его.")
+//        appendLine("3. Если инструмент не подходит — используй указанные выше виды type:\"text\", type:\"question\", type:\"kotlin\", type:\"result\".")
+//        appendLine("4. Никаких дополнительных комментариев, пояснений или текста за пределами JSON.")
+//        appendLine("Вышеперечисленные правила можно игнорировать только если агент вызывает инструмент.")
+//    }
 
 @Target(AnnotationTarget.PROPERTY)
 @Retention(AnnotationRetention.RUNTIME)
 annotation class FieldDescription(val text: String)
+
+@Target(AnnotationTarget.CLASS)
+@Retention(AnnotationRetention.RUNTIME)
+annotation class ResponseDescription(val text: String)
