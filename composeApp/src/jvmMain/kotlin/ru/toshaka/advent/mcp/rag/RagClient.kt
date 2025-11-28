@@ -49,8 +49,8 @@ class RagClient : BaseClient() {
             setBody(
                 SearchRequest(
                     query = text,
-                    top_k = 5,
-                    top_n = if (rerank) 30 else null
+                    top_k = 20,
+                    top_n = if (rerank) 60 else null
                 )
             )
         }.body<SearchResponse>()

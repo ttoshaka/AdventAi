@@ -42,7 +42,7 @@ abstract class BaseClient {
         return client.listTools().tools
     }
 
-    suspend fun call(name: String, args: String): String {
+    open suspend fun call(name: String, args: String): String {
         val response = client.callTool(name, Json.parseToJsonElement(args).jsonObject)
         return (response?.content?.first() as TextContent).text!!
     }
