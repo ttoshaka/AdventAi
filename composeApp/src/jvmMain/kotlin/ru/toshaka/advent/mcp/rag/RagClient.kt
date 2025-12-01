@@ -9,15 +9,12 @@ import io.ktor.client.plugins.logging.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
-import io.modelcontextprotocol.kotlin.sdk.CallToolResult
-import io.modelcontextprotocol.kotlin.sdk.TextContent
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.boolean
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import ru.toshaka.advent.SearchRequest
-import ru.toshaka.advent.SearchResponse
 import ru.toshaka.advent.mcp.BaseClient
+import ru.toshaka.advent.mcp.github.GithubServer
 
 class RagClient : BaseClient() {
     override val name: String = "rag_client"
@@ -44,16 +41,16 @@ class RagClient : BaseClient() {
     override suspend fun call(name: String, args: String): String {
         val text = Json.parseToJsonElement(args).jsonObject["text"]!!.jsonPrimitive.content
         val rerank = Json.parseToJsonElement(args).jsonObject["rerank"]?.jsonPrimitive?.boolean ?: false
-        val response = client.post("http://localhost:9000/search") {
+        val response = client.post("http://localhost:9002/search") {
             contentType(ContentType.Application.Json)
             setBody(
-                SearchRequest(
+                GithubServer.SearchRequest(
                     query = text,
                     top_k = 20,
                     top_n = if (rerank) 60 else null
                 )
             )
-        }.body<SearchResponse>()
+        }.body<GithubServer.SearchResponse>()
         return buildString {
             response.results.forEach {
                 appendLine(it.text)

@@ -5,21 +5,19 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import ru.toshaka.advent.data.model.ChatRequest
-import ru.toshaka.advent.mcp.code.CodeClient
-import ru.toshaka.advent.mcp.code.CodeServer
-import ru.toshaka.advent.mcp.obsidian.ObsidianClient
-import ru.toshaka.advent.mcp.obsidian.ObsidianServer
-import ru.toshaka.advent.mcp.page.PageClient
-import ru.toshaka.advent.mcp.page.PageServer
+import ru.toshaka.advent.mcp.file.FileClient
+import ru.toshaka.advent.mcp.file.FileServer
+import ru.toshaka.advent.mcp.github.GithubClient
+import ru.toshaka.advent.mcp.github.GithubServer
 import ru.toshaka.advent.mcp.rag.RagClient
 import ru.toshaka.advent.mcp.rag.RagServer
-import ru.toshaka.advent.mcp.util.UtilsClient
-import ru.toshaka.advent.mcp.util.UtilsServer
 
 class McpManager {
 
     private val mcp = mapOf(
         RagServer() to RagClient(),
+        GithubServer() to GithubClient(),
+        FileServer() to FileClient()
     )
     private val clients = mutableMapOf<String, BaseClient>()
     private val tools = mutableListOf<Tool>()

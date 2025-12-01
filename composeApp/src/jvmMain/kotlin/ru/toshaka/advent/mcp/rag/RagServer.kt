@@ -14,9 +14,8 @@ import io.modelcontextprotocol.kotlin.sdk.TextContent
 import io.modelcontextprotocol.kotlin.sdk.Tool
 import io.modelcontextprotocol.kotlin.sdk.server.RegisteredTool
 import kotlinx.serialization.json.*
-import ru.toshaka.advent.SearchRequest
-import ru.toshaka.advent.SearchResponse
 import ru.toshaka.advent.mcp.BaseServer
+import ru.toshaka.advent.mcp.github.GithubServer
 
 class RagServer : BaseServer() {
     override val port: Int = 3007
@@ -75,13 +74,13 @@ class RagServer : BaseServer() {
             val response = client.post("http://localhost:9000/search") {
                 contentType(ContentType.Application.Json)
                 setBody(
-                    SearchRequest(
+                    GithubServer.SearchRequest(
                         query = text,
                         top_k = 5,
                         top_n = if (rerank) 20 else null
                     )
                 )
-            }.body<SearchResponse>()
+            }.body<GithubServer.SearchResponse>()
             CallToolResult(
                 content = listOf(
                     TextContent(

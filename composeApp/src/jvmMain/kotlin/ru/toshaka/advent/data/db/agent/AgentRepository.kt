@@ -14,15 +14,9 @@ class AgentRepository(
     fun getAllAsFlow(): Flow<List<AgentEntity>> =
         agentDao.getAllAsFlow().map { agents ->
             agents + AgentEntity(
-                id = -100,
-                name = "RAGer reranker",
-                systemPrompt = prompt + " Используй реранк",
-                temperature = 0.2f,
-                maxTokens = 8000
-            ) + AgentEntity(
                 id = -101,
                 name = "RAGer",
-                systemPrompt = prompt + " Запрещено использовать реранк.",
+                systemPrompt = prompt,
                 temperature = 0.2f,
                 maxTokens = 8000
             )
@@ -30,15 +24,9 @@ class AgentRepository(
 
     suspend fun getAll(): List<AgentEntity> =
         agentDao.getAll() + AgentEntity(
-            id = -100,
-            name = "RAGer reranker",
-            systemPrompt = prompt + " Используй реранк",
-            temperature = 0.2f,
-            maxTokens = 8000
-        ) + AgentEntity(
             id = -101,
             name = "RAGer",
-            systemPrompt = prompt + " Зарпещено использовать реранк.",
+            systemPrompt = prompt,
             temperature = 0.2f,
             maxTokens = 8000
         )
@@ -64,7 +52,6 @@ val prompt = """
         3. Никогда не отвечай «не знаю» или «уточните» до обращения к RAG.
         4. Если RAG возвращает данные, используй их полностью для ответа.
         5. Не добавляй никакие дополнительные комментарии или пояснения вне JSON.
-        6. Отправляй для запроса в RAG только запрос пользователя, не пытайся его модифицировать.
-        7. Ты можешь запрашивать информацию из RAG только один раз!
-        8. Ты обязан всегда указывать цитату или часть текста от куда ты взял информацию! Каждое твое утверждение должно сопровождаться цитатой.
+        7. Ты можешь запрашивать информацию из RAG не больше 5 раз.
+        8. Через RAG ты будешь работать в мультиплатформенным решением на kotlin. Ищи информацию в RAG учитываю эту особенность
 """.trimIndent()
