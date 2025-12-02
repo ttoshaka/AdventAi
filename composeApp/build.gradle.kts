@@ -48,6 +48,10 @@ kotlin {
             implementation("org.jsoup:jsoup:1.21.2")
             implementation("com.mikepenz:multiplatform-markdown-renderer:0.38.1")
             implementation("com.mikepenz:multiplatform-markdown-renderer-m3:0.38.1")
+
+            implementation("ai.koog:koog-agents:0.5.2")
+            implementation("org.kohsuke:github-api:1.330")
+
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

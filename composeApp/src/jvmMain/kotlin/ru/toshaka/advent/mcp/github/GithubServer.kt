@@ -16,8 +16,11 @@ import io.modelcontextprotocol.kotlin.sdk.Tool
 import io.modelcontextprotocol.kotlin.sdk.server.RegisteredTool
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.*
+import org.kohsuke.github.GHIssueState
+import org.kohsuke.github.GitHubBuilder
 import ru.toshaka.advent.mcp.BaseServer
 import java.io.File
+import java.net.URL
 import java.util.zip.ZipInputStream
 
 class GithubServer : BaseServer() {
@@ -74,7 +77,72 @@ class GithubServer : BaseServer() {
             CallToolResult(content = listOf(TextContent("Данные сохранены в базе знаний RAG")))
         }
 
-        return listOf(execTool)
+        val pullRequestTool = RegisteredTool(
+            Tool(
+                title = null,
+                outputSchema = null,
+                annotations = null,
+                name = "pullRequest",
+                description = "Возвращает изменения в пул реквесте",
+                inputSchema = Tool.Input(
+                    properties = buildJsonObject {
+                        putJsonObject("repoName") {
+                            put("type", JsonPrimitive("string"))
+                            put(
+                                "description",
+                                JsonPrimitive("Название репозитория из которого нужно получть пул реквест")
+                            )
+                        }
+                    },
+                    required = listOf("repoName")
+                ),
+            )
+        ) { callToolRequest ->
+            val repoName = callToolRequest.arguments["repoName"]?.jsonPrimitive?.content ?: ""
+            val github = GitHubBuilder().withOAuthToken("TOKEN").build()
+            val pr = github.getRepository(repoName).searchPullRequests().list().toList().first { it.state == GHIssueState.OPEN }
+           // delay(10_000L)
+           // val diff = pr.pullRequest.diffUrl
+            //TODO
+            val content = URL("https://patch-diff.githubusercontent.com/raw/ttoshaka/AdventAi/pull/2.diff").readText()
+            CallToolResult(content = listOf(TextContent("Изменения в пулл реквесте:\n$content")))
+        }
+
+        val commentTool = RegisteredTool(
+            Tool(
+                title = null,
+                outputSchema = null,
+                annotations = null,
+                name = "comment",
+                description = "Оставляет комментарий к пулл реквесту переданного репозитория",
+                inputSchema = Tool.Input(
+                    properties = buildJsonObject {
+                        putJsonObject("repoName") {
+                            put("type", JsonPrimitive("string"))
+                            put(
+                                "description",
+                                JsonPrimitive("Название репозитория к пулл реквесту которого нужно оставить комментарий")
+                            )
+                        }
+                        putJsonObject("text") {
+                            put("type", JsonPrimitive("string"))
+                            put(
+                                "description",
+                                JsonPrimitive("Содержимое коментария")
+                            )
+                        }
+                    },
+                    required = listOf("text")
+                ),
+            )
+        ) { callToolRequest ->
+            val repoName = callToolRequest.arguments["repoName"]?.jsonPrimitive?.content ?: ""
+            val text = callToolRequest.arguments["text"]?.jsonPrimitive?.content ?: ""
+            val github = GitHubBuilder().withOAuthToken("TOKEN").build()
+            github.getRepository(repoName).searchPullRequests().list().toList().first { it.state == GHIssueState.OPEN }.comment(text)
+            CallToolResult(content = listOf(TextContent("Комментарий отправлен")))
+        }
+        return listOf(execTool, pullRequestTool, commentTool)
     }
 
     private suspend fun add(chunks: List<String>): AddResponse =
