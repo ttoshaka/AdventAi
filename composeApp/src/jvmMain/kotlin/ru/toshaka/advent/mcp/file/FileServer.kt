@@ -31,17 +31,22 @@ class FileServer : BaseServer() {
                             put("type", JsonPrimitive("string"))
                             put("description", JsonPrimitive("Текст, который будет записан в файл"))
                         }
+                        putJsonObject("name") {
+                            put("type", JsonPrimitive("string"))
+                            put("description", JsonPrimitive("Название файла"))
+                        }
                     },
-                    required = listOf("content")
+                    required = listOf("content", "name")
                 ),
             )
         ) { callToolRequest ->
             val content = callToolRequest.arguments["content"]?.jsonPrimitive?.content ?: ""
+            val name = callToolRequest.arguments["name"]?.jsonPrimitive?.content ?: ""
 
             return@RegisteredTool try {
                 val dir = File("docs")
                 if (!dir.exists()) dir.mkdirs()
-                val file = File(dir, "structure.md")
+                val file = File(dir, "$name.md")
                 file.writeText(content)
                 CallToolResult(content = listOf(TextContent("Файл успешно создан: ${file.path}")))
             } catch (e: Exception) {

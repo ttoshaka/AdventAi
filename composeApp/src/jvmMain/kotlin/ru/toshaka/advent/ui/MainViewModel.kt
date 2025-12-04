@@ -7,6 +7,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.actor
 import kotlinx.coroutines.flow.*
+import ru.toshaka.advent.Question
 import ru.toshaka.advent.data.agent.*
 import ru.toshaka.advent.data.db.AppDatabase
 import ru.toshaka.advent.data.db.agent.AgentEntity
@@ -18,6 +19,7 @@ import ru.toshaka.advent.data.db.message.MessagesRepository
 import ru.toshaka.advent.data.db.message.isUser
 import ru.toshaka.advent.mcp.McpManager
 import java.io.File
+import kotlin.random.Random
 
 class MainViewModel {
 
@@ -48,6 +50,59 @@ class MainViewModel {
             mcpManager.launchServer()
         }
         observeChatsAndMessages()
+    }
+
+    fun sendQuestion(question: Question) = scope.launch {
+        val id = Random.nextLong()
+        saveMessage(
+            MessageEntity(
+                chatId = id,
+                owner = 0L,
+                content = question.question,
+                debugInfo = null,
+                timestamp = System.currentTimeMillis(),
+                history = true,
+            )
+        )
+        val agentEntity = agentRepo.getAll().first()
+        val agent = Agent(
+            DeepSeekChatAgent {
+                this.systemPrompt = agentEntity.systemPrompt
+                history = { messageRepo.getAll(id) }
+                this.tools = mcpManager.getTools()
+                onToolCall = { toolCall ->
+                    messageRepo.save(
+                        MessageEntity(
+                            chatId = id,
+                            owner = agentEntity.id,
+                            content = null,
+                            toolCallIndex = toolCall.index,
+                            toolCallId = toolCall.id,
+                            toolCallType = toolCall.type,
+                            toolCallName = toolCall.function.name,
+                            toolCallArguments = toolCall.function.arguments,
+                            debugInfo = null,
+                            timestamp = System.currentTimeMillis(),
+                            history = true
+                        )
+                    )
+                    val toolResponse = mcpManager.callTool(toolCall.function.name, toolCall.function.arguments)
+                    messageRepo.save(
+                        MessageEntity(
+                            chatId = id,
+                            owner = -1L,
+                            content = toolResponse,
+                            toolCallId = toolCall.id,
+                            debugInfo = null,
+                            timestamp = System.currentTimeMillis(),
+                            history = true
+                        )
+                    )
+                    toolResponse
+                }
+            }
+        )
+        println(agent.request(question.question))
     }
 
     private fun observeChatsAndMessages() = scope.launch {

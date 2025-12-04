@@ -1,25 +1,28 @@
 package ru.toshaka.advent
 
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Window
-import androidx.compose.ui.window.WindowState
-import androidx.compose.ui.window.application
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import ru.toshaka.advent.ui.MainViewModel
-import ru.toshaka.advent.ui.view.App
+import java.nio.charset.StandardCharsets
 
-fun main() = application {
+@Serializable
+data class Question(
+    val id: Int,
+    val question: String,
+)
+
+fun main() = runBlocking {
     val viewModel = MainViewModel()
-    val state by viewModel.state.collectAsState()
-    Window(
-        onCloseRequest = ::exitApplication,
-        title = "AdventAi_3",
-        state = WindowState(
-            width = 1200.dp,
-            height = 900.dp,
-        ),
-    ) {
-        App(state)
-    }
+    delay(5000)
+    val json = Thread.currentThread()
+        .contextClassLoader
+        .getResourceAsStream("questions.json")!!
+        .readBytes()
+        .toString(StandardCharsets.UTF_8)
+    Json.decodeFromString<List<Question>>(json).forEach { viewModel.sendQuestion(it) }
+    awaitCancellation()
+    println()
 }
