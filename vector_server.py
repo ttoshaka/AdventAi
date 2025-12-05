@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 ##uvicorn vector_server:app --host 0.0.0.0 --port 9000 --reload
 app = FastAPI()
 
-EMBED_MODEL = "nomic-embed-text"
+EMBED_MODEL = "jina/jina-embeddings-v2-base-en"
 RERANK_MODEL = "llama3.1:8b"  # замените на свою модель
 
 VECTOR_DIM = 768

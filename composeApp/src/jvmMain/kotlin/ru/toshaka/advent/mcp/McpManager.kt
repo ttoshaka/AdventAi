@@ -16,7 +16,7 @@ class McpManager {
 
     private val mcp = mapOf(
         RagServer() to RagClient(),
-        GithubServer() to GithubClient(),
+        //GithubServer() to GithubClient(),
         FileServer() to FileClient()
     )
     private val clients = mutableMapOf<String, BaseClient>()

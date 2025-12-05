@@ -40,14 +40,13 @@ class RagClient : BaseClient() {
 
     override suspend fun call(name: String, args: String): String {
         val text = Json.parseToJsonElement(args).jsonObject["text"]!!.jsonPrimitive.content
-        val rerank = Json.parseToJsonElement(args).jsonObject["rerank"]?.jsonPrimitive?.boolean ?: false
-        val response = client.post("http://localhost:9002/search") {
+        val response = client.post("http://localhost:9003/search") {
             contentType(ContentType.Application.Json)
             setBody(
                 GithubServer.SearchRequest(
                     query = text,
                     top_k = 20,
-                    top_n = if (rerank) 60 else null
+                    top_n = null
                 )
             )
         }.body<GithubServer.SearchResponse>()

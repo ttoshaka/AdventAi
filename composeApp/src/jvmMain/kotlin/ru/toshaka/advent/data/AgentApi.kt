@@ -34,7 +34,7 @@ class AgentApi(
             )
         }
         install(HttpTimeout) {
-            requestTimeoutMillis = TIMEOUT
+            requestTimeoutMillis = Long.MAX_VALUE
         }
 
         install(Auth) {
@@ -83,7 +83,6 @@ class AgentApi(
             model = agentConfig.model,
             responseFormat = ChatRequest.ResponseFormat("json_object"),
             temperature = agentConfig.temperature,
-            maxTokens = agentConfig.maxTokens,
             tools = agentConfig.tools,
         )
 
@@ -112,7 +111,6 @@ class AgentApi(
             model = agentConfig.model,
             responseFormat = ChatRequest.ResponseFormat("json_object"),
             temperature = agentConfig.temperature,
-            maxTokens = agentConfig.maxTokens,
             tools = agentConfig.tools,
         )
 
@@ -157,7 +155,6 @@ class AgentApi(
             model = agentConfig.model,
             responseFormat = ChatRequest.ResponseFormat("json_object"),
             temperature = agentConfig.temperature,
-            maxTokens = agentConfig.maxTokens,
             tools = agentConfig.tools,
         )
 
