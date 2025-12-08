@@ -7,6 +7,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.actor
 import kotlinx.coroutines.flow.*
+import kotlinx.serialization.json.Json
 import ru.toshaka.advent.data.agent.*
 import ru.toshaka.advent.data.db.AppDatabase
 import ru.toshaka.advent.data.db.agent.AgentEntity
@@ -211,13 +212,13 @@ class MainViewModel {
                                 toolCallId = toolCall.id,
                                 toolCallType = toolCall.type,
                                 toolCallName = toolCall.function.name,
-                                toolCallArguments = toolCall.function.arguments,
+                                toolCallArguments = Json.encodeToString(toolCall.function.arguments),
                                 debugInfo = null,
                                 timestamp = System.currentTimeMillis(),
                                 history = true
                             )
                         )
-                        val toolResponse = mcpManager.callTool(toolCall.function.name, toolCall.function.arguments)
+                        val toolResponse = mcpManager.callTool(toolCall.function.name, Json.encodeToString(toolCall.function.arguments))
                         messageRepo.save(
                             MessageEntity(
                                 chatId = chatId,
@@ -235,6 +236,7 @@ class MainViewModel {
             )
             val response = runCatching { agent.request() }
                 .getOrElse {
+                    it.printStackTrace()
                     println("Ошибка при запросе к агенту ${agentEntity.name}: ${it}")
                     return@trySend
                 }

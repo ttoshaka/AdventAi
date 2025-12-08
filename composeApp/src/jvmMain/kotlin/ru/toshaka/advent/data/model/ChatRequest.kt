@@ -13,7 +13,7 @@ data class ChatRequest(
     @SerialName("frequency_penalty")
     val frequencyPenalty: Int = 0,
     @SerialName("max_tokens")
-    val maxTokens: Int = 4096,
+    val maxTokens: Int = 12000,
     @SerialName("presence_penalty")
     val presencePenalty: Int = 0,
     @SerialName("response_format")
@@ -25,7 +25,7 @@ data class ChatRequest(
     @SerialName("stream_options")
     val streamOptions: String? = null,
     @SerialName("temperature")
-    val temperature: Float = 1f,
+    val temperature: Float = 0.2f,
     @SerialName("top_p")
     val topP: Int = 1,
     @SerialName("tools")
@@ -35,7 +35,7 @@ data class ChatRequest(
     @SerialName("logprobs")
     val logprobs: Boolean = false,
     @SerialName("top_logprobs")
-    val topLogprobs: String? = null
+    val topLogprobs: String? = null,
 ) {
 
     @Serializable

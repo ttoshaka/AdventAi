@@ -51,31 +51,26 @@ class Agent<out R : AiResponse>(private val config: AgentConfig<R>) {
     }
 
     private suspend fun ChatResponse.handle(): R {
-        val toolCall = choices.first().message.toolCall?.firstOrNull()
+        val toolCall = (choices?.first()?.message ?: message)?.toolCall?.firstOrNull()
         if (toolCall != null) {
             config.onToolCall(toolCall)
             return request()
         }
-        val message = Json.decodeFromString<AiResponse>(choices.first().message.content) as R
-        return message
+        val content = (choices?.first()?.message ?: message)?.content!!
+        var aiResponse: AiResponse
+        try {
+            aiResponse = Json.decodeFromString<AiResponse>(content)
+        } catch (throwable: Throwable) {
+            throwable.printStackTrace()
+            aiResponse = AiResponse.TextResponse(content = content)
+        }
+        return aiResponse as R
     }
 }
 
 fun String.appendPromptDescription(classes: List<KClass<*>>): String =
     """
-    Ты - ИИ-агент, возможны только два варианта результата твоей работы:
-        1) Ответ на запрос пользователя. В таком случае ты ДОЛЖЕН отвечать строго в одном из следующих форматов JSON:
-            Все ответы должны быть корректным JSON объектом одной из указанных структур.
-            Никаких дополнительных комментариев, пояснений или текста за пределами JSON.
-            ${getVariants(classes)}
-        2) Вызов инструмента MCP. В таком случае ты должен вызвать инструмент и в ответе описать название инструмента и переданные параметры.
-        
-    Правила которые ты ОБЯЗАН придерживаться:
-        1) Если существует возможность решить задачу через MCP инструмент — используй его.;
-        2) Если в твоём распоряжение есть инструмент для взаимодействия с RAG, ты считаешь что тебе недостаточно текущих данных и ни один другой инструмент не может помочь, то обязательно используй RAG. .
-        3) Если по какой-либо причине тебе нечего ответить, то напиши почему это произошло.
-        4) Если ты собираешь воспользоваться инструментом, то ты не должен описывать свои действия, сразу используй инструмент.
-    $this
+    Ты - ИИ-агент
     """.trimIndent()
 
 fun getVariants(classes: List<KClass<*>>): String =

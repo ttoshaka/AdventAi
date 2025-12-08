@@ -1,6 +1,7 @@
 package ru.toshaka.advent.data.agent
 
 import kotlinx.coroutines.delay
+import kotlinx.serialization.json.Json
 import ru.toshaka.advent.data.db.message.MessageEntity
 import ru.toshaka.advent.mcp.McpManager
 
@@ -27,13 +28,13 @@ class PeriodicAgent(
                         toolCallId = toolCall.id,
                         toolCallType = toolCall.type,
                         toolCallName = toolCall.function.name,
-                        toolCallArguments = toolCall.function.arguments,
+                        toolCallArguments = Json.encodeToString(toolCall.function.arguments),
                         debugInfo = null,
                         timestamp = System.currentTimeMillis(),
                         history = true
                     )
                 )
-                val toolResponse = mcpManager.callTool(toolCall.function.name, toolCall.function.arguments)
+                val toolResponse = mcpManager.callTool(toolCall.function.name, Json.encodeToString(toolCall.function.arguments))
                 localHistory.add(
                     MessageEntity(
                         chatId = -100,

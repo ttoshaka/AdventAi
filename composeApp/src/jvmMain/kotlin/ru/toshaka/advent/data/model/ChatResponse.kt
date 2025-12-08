@@ -2,23 +2,26 @@ package ru.toshaka.advent.data.model
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonElement
 
 @Serializable
 data class ChatResponse(
     @SerialName("id")
-    val id: String,
+    val id: String? = null,
     @SerialName("object")
-    val `object`: String,
+    val `object`: String? = null,
     @SerialName("created")
-    val created: Long,
+    val created: Long? = null,
     @SerialName("model")
     val model: String,
     @SerialName("choices")
-    val choices: List<Choice>,
+    val choices: List<Choice>? = null,
     @SerialName("usage")
     val usage: Usage? = null,
     @SerialName("system_fingerprint")
-    val systemFingerprint: String? = null
+    val systemFingerprint: String? = null,
+    @SerialName("message")
+    val message: Message? = null,
 ) {
     @Serializable
     data class Choice(
@@ -34,16 +37,17 @@ data class ChatResponse(
 
     @Serializable
     data class ToolCall(
-        val index: Int,
+        val index: Int? = null,
         val id: String,
-        val type: String,
+        val type: String? = null,
         val function: ToolFunction,
     )
 
     @Serializable
     data class ToolFunction(
         val name: String,
-        val arguments: String,
+        @SerialName("arguments")
+        val arguments: Map<String, JsonElement>,
     )
 
     @Serializable

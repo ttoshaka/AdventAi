@@ -30,6 +30,7 @@ class AgentApi(
                 Json {
                     ignoreUnknownKeys = true
                     prettyPrint = true
+                    encodeDefaults = true
                 }
             )
         }
@@ -65,12 +66,12 @@ class AgentApi(
                             toolCalls = message.toolCallName?.let {
                                 listOf(
                                     ChatResponse.ToolCall(
-                                        index = message.toolCallIndex!!,
+                                        index = message.toolCallIndex,
                                         id = message.toolCallId!!,
-                                        type = message.toolCallType!!,
+                                        type = message.toolCallType,
                                         function = ChatResponse.ToolFunction(
                                             name = message.toolCallName!!,
-                                            arguments = message.toolCallArguments!!,
+                                            arguments = Json.decodeFromString(message.toolCallArguments!!),
                                         )
 
                                     )
@@ -84,6 +85,7 @@ class AgentApi(
             responseFormat = ChatRequest.ResponseFormat("json_object"),
             temperature = agentConfig.temperature,
             tools = agentConfig.tools,
+            stream = false
         )
 
         return client.post(agentConfig.baseUrl) {
@@ -112,6 +114,7 @@ class AgentApi(
             responseFormat = ChatRequest.ResponseFormat("json_object"),
             temperature = agentConfig.temperature,
             tools = agentConfig.tools,
+            stream = false
         )
 
         return client.post(agentConfig.baseUrl) {

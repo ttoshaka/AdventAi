@@ -14,10 +14,10 @@ import ru.toshaka.advent.mcp.rag.RagServer
 
 class McpManager {
 
-    private val mcp = mapOf(
-        RagServer() to RagClient(),
+    private val mcp = mapOf<BaseServer, BaseClient>(
+        //RagServer() to RagClient(),
         //GithubServer() to GithubClient(),
-        FileServer() to FileClient()
+        //FileServer() to FileClient()
     )
     private val clients = mutableMapOf<String, BaseClient>()
     private val tools = mutableListOf<Tool>()
