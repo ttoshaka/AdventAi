@@ -18,30 +18,32 @@ class FileServer : BaseServer() {
     override val version: String = "0.0.1"
 
     override fun createTools(): List<RegisteredTool> {
-        val createFileTool = RegisteredTool(
+        val saveFileContent = RegisteredTool(
             Tool(
                 title = null,
                 outputSchema = null,
                 annotations = null,
-                name = "CreateFile",
-                description = "Создаёт файл с указанным содержимым",
+                name = "saveFileContent",
+                description = "Сохраняет переданное содержимое в файл с указанным именем",
                 inputSchema = Tool.Input(
                     properties = buildJsonObject {
                         putJsonObject("content") {
                             put("type", JsonPrimitive("string"))
-                            put("description", JsonPrimitive("Текст, который будет записан в файл"))
+                            put("description", JsonPrimitive("Содержимое для сохранения в файл"))
+                        }
+                        putJsonObject("path") {
+                            put("type", JsonPrimitive("string"))
+                            put("description", JsonPrimitive("Путь к файлу в который нужно сохранить содержимое"))
                         }
                     },
-                    required = listOf("content")
+                    required = listOf("content", "path")
                 ),
             )
         ) { callToolRequest ->
             val content = callToolRequest.arguments["content"]?.jsonPrimitive?.content ?: ""
-
+            val path = callToolRequest.arguments["path"]?.jsonPrimitive?.content ?: ""
             return@RegisteredTool try {
-                val dir = File("docs")
-                if (!dir.exists()) dir.mkdirs()
-                val file = File(dir, "structure.md")
+                val file = File(path)
                 file.writeText(content)
                 CallToolResult(content = listOf(TextContent("Файл успешно создан: ${file.path}")))
             } catch (e: Exception) {
@@ -49,6 +51,34 @@ class FileServer : BaseServer() {
             }
         }
 
-        return listOf(createFileTool)
+        val getFileContent = RegisteredTool(
+            Tool(
+                title = null,
+                outputSchema = null,
+                annotations = null,
+                name = "getFileContent",
+                description = "Получить содержимое файла",
+                inputSchema = Tool.Input(
+                    properties = buildJsonObject {
+                        putJsonObject("path") {
+                            put("type", JsonPrimitive("string"))
+                            put("description", JsonPrimitive("Путь к файлу содержимое которого нужно получить"))
+                        }
+                    },
+                    required = listOf("path")
+                ),
+            )
+        ) { callToolRequest ->
+            val path = callToolRequest.arguments["path"]?.jsonPrimitive?.content ?: ""
+            return@RegisteredTool try {
+                val file = File(path)
+                val content = file.readText()
+                CallToolResult(content = listOf(TextContent("Содержимое файла ${file.path}:\n$content")))
+            } catch (e: Exception) {
+                CallToolResult(content = listOf(TextContent("Ошибка при чтение файла: ${e.message}")))
+            }
+        }
+
+        return listOf(saveFileContent, getFileContent)
     }
 }
