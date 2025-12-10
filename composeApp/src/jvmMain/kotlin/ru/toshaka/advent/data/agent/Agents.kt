@@ -2,8 +2,8 @@ package ru.toshaka.advent.data.agent
 
 fun DeepSeekChatAgent(config: AgentConfig<AiResponse>.() -> Unit): AgentConfig<AiResponse> {
     val defConfig: AgentConfig<AiResponse>.() -> Unit = {
-        model = "qwen3:14b"
-        baseUrl = "http://localhost:11434/api/chat"
+        model = "llama3.2:1b"
+        baseUrl = "http://url/api/chat"
     }
     return AgentConfig<AiResponse>().apply(config).apply(defConfig)
 }

@@ -12,6 +12,7 @@ import ru.toshaka.advent.ui.view.App
 fun main() = application {
     val viewModel = MainViewModel()
     val state by viewModel.state.collectAsState()
+
     Window(
         onCloseRequest = ::exitApplication,
         title = "AdventAi_3",
